@@ -2,7 +2,7 @@
 
 [English](README_en.md)
 
-Jrag 是一个基于 Java Spring Boot 打造的 RAG（Retrieval-Augmented Generation）平台，旨在通过结合检索与生成技术，增强大语言模型在 Java 生态中的应用能力。该平台支持接入多种主流的大语言模型接口，包括 Ollama，并集成了 Milvus 与 Redis 两种向量数据库，以提供高效的向量存储与检索服务。
+Jrag 是一个基于 Java Spring Boot 打造的 RAG（Retrieval-Augmented Generation）平台，旨在通过结合检索与生成技术，增强大语言模型在 Java 生态中的应用能力。该平台支持接入多种主流的大语言模型接口，包括 Ollama 和 OpenAI，并集成了 Milvus 与 Redis 两种向量数据库，以提供高效的向量存储与检索服务。
 
 ## 用途
 
@@ -10,8 +10,8 @@ Jrag 是一个基于 Java Spring Boot 打造的 RAG（Retrieval-Augmented Genera
 
 ## 特性
 
-- **多模型支持**：兼容 Ollama风格接口，灵活切换不同的大语言模型。
-- **向量数据库集成**：支持 Redis 作为向量数据库，满足不同场景下的性能需求。
+- **多模型支持**：兼容 Ollama 和 OpenAI 风格接口，灵活切换不同的大语言模型。
+- **向量数据库集成**：支持 Milvus 和 Redis 向量数据库，满足不同场景下的性能需求。
 - **Function Calling**：支持函数调用，让LLM能够调用其他系统的API。
 - **Java生态优化**：专为 Java 开发者设计，简化 RAG 技术在 Java 项目中的集成与应用。
 - **JDK21** ：Jrag 基于JDK21开发，可使用虚拟线程，提升并发性能。
