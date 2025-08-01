@@ -21,15 +21,20 @@ public class LoginService {
     private static final ConcurrentHashMap<String, SessionBo> SESSION_MAP = new ConcurrentHashMap<>();
     private static final long EXPIRE_TIME_MINUTES = 30;
     private final UserPoMapper userPoMapper;
+    private final CaptchaService captchaService;
     public ThreadLocal<String> sessionThreadLocal = new ThreadLocal();
 
-    public LoginService(UserPoMapper userPoMapper) {
+    public LoginService(UserPoMapper userPoMapper, CaptchaService captchaService) {
         this.userPoMapper = userPoMapper;
+        this.captchaService = captchaService;
     }
 
-    public SessionBo login(String username, String password) {
+    public SessionBo login(String username, String password, String captchaCode, String hash) {
         UserPoExample example = new UserPoExample();
         example.createCriteria().andUsernameEqualTo(username);
+        if (!captchaService.verifyCaptchaCode(captchaCode, hash)) {
+            return null;
+        }
         List<UserPo> userPos = userPoMapper.selectByExample(example);
         if (userPos.isEmpty()) {
             return null;

@@ -14,6 +14,41 @@ components:
         password:
           type: string
           format: password
+        validateCode:
+          type: string
+          description: 验证码
+        hash:
+          type: string
+          description: 验证码Hash
+    SlideCaptchaResp:
+      type: object
+      description: 滑动验证码
+      properties:
+        hash:
+          type: string
+          description: 验证码签名
+        puzzleUrl:
+          type: string
+          description: 凹槽图片url
+        width:
+          type: integer
+          format: int32
+          description: 凹槽图片宽度
+        height:
+          type: integer
+          format: int32
+          description: 凹槽图片高度
+        sliderUrl:
+          type: string
+          description: 滑块图片url
+        sliderSize:
+          type: integer
+          format: int32
+          description: 滑块图片宽度
+        sliderY:
+          type: number
+          format: float
+          description: 滑块图片高度
     EmbeddingsRequestDto:
       type: object
       properties:

@@ -11,6 +11,9 @@ spring:
     resources:
       static-locations: classpath:/dist/
 jrag:
+  security:
+    captcha:
+      expire-seconds: 300
   llm:
     demo: false
     temperature: 0.5

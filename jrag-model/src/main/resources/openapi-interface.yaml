@@ -61,6 +61,51 @@ paths:
       responses:
         '200':
           description: OK
+  /v1/auth/captcha/slide:
+    get:
+      operationId: getSlideCaptcha
+      tags: [ Login ]
+      summary: 滑动验证码
+      responses:
+        200:
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: './openapi-model.yaml#/components/schemas/SlideCaptchaResp'
+  /v1/auth/captcha/slide/validate:
+    get:
+      operationId: verifySlideCaptcha
+      tags: [ Login ]
+      summary: 验证滑动验证码并得到经典验证码的值
+      parameters:
+        - name: slider-x
+          in: query
+          description: 滑块横坐标
+          required: true
+          schema:
+            type: number
+            format: float
+        - name: hash
+          in: query
+          description: 验证码的hash
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: boolean
+                    description: 验证结果
+                  code:
+                    type: string
+                    description: 验证码
   /v1/api/jrag/embed:
     post:
       tags:
@@ -360,6 +405,7 @@ paths:
             application/json:
               schema:
                 $ref: './openapi-model.yaml#/components/schemas/CheckApCenterApiResponse'
+
 components:
   schemas:
     RagInfoDto:
