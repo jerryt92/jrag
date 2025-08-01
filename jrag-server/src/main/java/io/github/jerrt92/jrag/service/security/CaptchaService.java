@@ -6,6 +6,8 @@ import io.github.jerrt92.jrag.utils.UUIDUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import javax.imageio.ImageIO;
@@ -20,12 +22,13 @@ import java.awt.geom.GeneralPath;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 @Component
+@EnableScheduling
 public class CaptchaService {
     private static final Logger log = LogManager.getLogger(CaptchaService.class);
     final Font iFont;
@@ -290,5 +293,14 @@ public class CaptchaService {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         ImageIO.write(image, format, byteArrayOutputStream);
         return byteArrayOutputStream.toByteArray();
+    }
+
+    @Scheduled(fixedRate = 1, timeUnit = TimeUnit.HOURS)
+    public void clearExpiredCaptchaCache() {
+        try {
+            captchaCacheMap.entrySet().removeIf(entry -> entry.getValue().expireTime < System.currentTimeMillis());
+        } catch (Throwable t) {
+            log.error("", t);
+        }
     }
 }
