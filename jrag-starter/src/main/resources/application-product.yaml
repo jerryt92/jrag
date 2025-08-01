@@ -56,3 +56,5 @@ jrag:
   file:
     upload-path: classpath:/file
     static-path: classpath:/static-file
+  rag:
+    md-location:

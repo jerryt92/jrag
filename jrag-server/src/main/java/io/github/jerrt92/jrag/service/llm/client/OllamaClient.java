@@ -3,7 +3,6 @@ package io.github.jerrt92.jrag.service.llm.client;
 import io.github.jerrt92.jrag.config.LlmProperties;
 import io.github.jerrt92.jrag.model.ChatModel;
 import io.github.jerrt92.jrag.model.FunctionCallingModel;
-import io.github.jerrt92.jrag.model.ModelOptionsUtils;
 import io.github.jerrt92.jrag.model.ollama.OllamaModel;
 import io.github.jerrt92.jrag.model.ollama.OllamaOptions;
 import lombok.extern.slf4j.Slf4j;
@@ -94,7 +93,6 @@ public class OllamaClient extends LlmClient {
             }
             request.setTools(ollamaTools);
         }
-        System.out.println(ModelOptionsUtils.toJsonString(request));
         Flux<OllamaModel.ChatResponse> eventStream = webClient.post()
                 .uri(llmProperties.ollamaBaseUrl + "/api/chat")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -119,6 +117,9 @@ public class OllamaClient extends LlmClient {
 
     private void consumeResponse(OllamaModel.ChatResponse ollamaResponse, Consumer<ChatModel.ChatResponse> onResponse, SseEmitter sseEmitter) {
         List<ChatModel.ToolCall> toolCalls = null;
+        if (ollamaResponse == null) {
+            sseEmitter.complete();
+        }
         if (!CollectionUtils.isEmpty(ollamaResponse.getMessage().getToolCalls())) {
             // 模型有function calling请求
             functionCallingSet.add(sseEmitter);
