@@ -1,7 +1,7 @@
 import requests
 import json
 from config.config import *
-from utills.restUtils import printStreamResponse
+from common.restUtils import printStreamResponse
 
 requestBody = {
     "model": "qwen3-14b-mlx",

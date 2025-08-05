@@ -4,8 +4,9 @@ import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import io.github.jerrt92.jrag.mapper.mgb.FilePoMapper;
 import io.github.jerrt92.jrag.mapper.mgb.TextChunkPoMapper;
-import io.github.jerrt92.jrag.model.ChatModel;
+import io.github.jerrt92.jrag.model.ChatRequestDto;
 import io.github.jerrt92.jrag.model.EmbeddingModel;
+import io.github.jerrt92.jrag.model.MessageDto;
 import io.github.jerrt92.jrag.model.RagInfoDto;
 import io.github.jerrt92.jrag.model.Translator;
 import io.github.jerrt92.jrag.po.mgb.FilePo;
@@ -47,7 +48,7 @@ public class Retriever {
      * @param chatRequest
      * @return
      */
-    public List<RagInfoDto> retrieveQuery(ChatModel.ChatRequest chatRequest) {
+    public List<RagInfoDto> retrieveQuery(ChatRequestDto chatRequest) {
         // 相似度匹配
         String queryContent = chatRequest.getMessages().get(chatRequest.getMessages().size() - 1).getContent();
         List<EmbeddingModel.EmbeddingsQueryItem> embeddingsQueryItems = similarityRetrieval(
@@ -92,12 +93,12 @@ public class Retriever {
                 fileMap = filePoMapper.selectByExample(filePoExample)
                         .stream().collect(Collectors.toMap(FilePo::getId, filePo -> filePo, (v1, v2) -> v1));
             }
-            ChatModel.Message systemPromptMessage = new ChatModel.Message()
-                    .setRole(ChatModel.Role.SYSTEM)
-                    .setContent(
-                            "The following is the relevant information retrieved for the user's question: \"" + queryContent + "\". Please answer the user's question based on this information. The details are as follows:"
-                                    + ragDataArray
-                    );
+            MessageDto systemPromptMessage = new MessageDto();
+            systemPromptMessage.setRole(MessageDto.RoleEnum.SYSTEM);
+            systemPromptMessage.setContent(
+                    "The following is the relevant information retrieved for the user's question: \"" + queryContent + "\". Please answer the user's question based on this information. The details are as follows:"
+                            + ragDataArray
+            );
             chatRequest.getMessages().add(systemPromptMessage);
             for (TextChunkPo textChunkPo : textChunkPoList) {
                 RagInfoDto ragInfoDto = new RagInfoDto();

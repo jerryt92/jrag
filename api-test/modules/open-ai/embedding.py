@@ -1,5 +1,5 @@
 from config.config import *
-from utills.restUtils import *
+from common.restUtils import *
 
 requestBody = {
     "model": "text-embedding-nomic-embed-text",

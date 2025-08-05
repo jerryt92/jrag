@@ -18,10 +18,16 @@ jrag:
     demo: false
     temperature: 0.5
     llm-provider: open-ai
-    use-tools: false
+    use-tools: true
     ollama:
-      model-name: qwen3:14b
-      base-url: http://127.0.0.1:11434
+#      model-name: qwen3:14b
+#      base-url: http://127.0.0.1:11434
+#      # 模型驻留时间
+#      keep_alive_seconds: 3600
+#      context-length: 32768
+
+      model-name: qwen3:14b-q8_0
+      base-url: http://172.16.8.107:11434
       # 模型驻留时间
       keep_alive_seconds: 3600
       context-length: 32768
@@ -30,6 +36,11 @@ jrag:
       base-url: http://127.0.0.1:1234
       completions-path: /v1/chat/completions
       key:
+#      model-name: 4.0Ultra
+#      base-url: https://spark-api-open.xf-yun.com
+#      completions-path: /v1/chat/completions
+#      key: RSvigWgMWgarwaTMNuBn:jMbCLBVJezEiHSqFCgpR
+#      use-tools: true
   embedding:
     # 嵌入向量维度
     dimension: 768
