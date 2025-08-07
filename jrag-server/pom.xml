@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.github.jerrt92.jrag</groupId>
+        <groupId>io.github.jerryt92.jrag</groupId>
         <artifactId>jrag</artifactId>
         <version>1.0.1-SNAPSHOT</version>
     </parent>
@@ -15,12 +15,12 @@
     </properties>
     <dependencies>
         <dependency>
-            <groupId>io.github.jerrt92.jrag</groupId>
+            <groupId>io.github.jerryt92.jrag</groupId>
             <artifactId>jrag-client</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.github.jerrt92.jrag</groupId>
+            <groupId>io.github.jerryt92.jrag</groupId>
             <artifactId>jrag-model</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
@@ -51,6 +51,10 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-websocket</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -200,14 +204,14 @@
                                 ${project.parent.basedir}/jrag-model/src/main/resources/openapi-interface.yaml
                             </inputSpec>
                             <generatorName>spring</generatorName>
-                            <invokerPackage>io.github.jerrt92.jrag.client</invokerPackage>
-                            <apiPackage>io.github.jerrt92.jrag.server.api</apiPackage>
-                            <modelPackage>io.github.jerrt92.jrag.model</modelPackage>
+                            <invokerPackage>io.github.jerryt92.jrag.client</invokerPackage>
+                            <apiPackage>io.github.jerryt92.jrag.server.api</apiPackage>
+                            <modelPackage>io.github.jerryt92.jrag.model</modelPackage>
                             <generateApis>true</generateApis>
                             <generateModels>false</generateModels>
                             <skipIfSpecIsUnchanged>true</skipIfSpecIsUnchanged>
                             <configOptions>
-                                <configPackage>io.github.jerrt92.jrag.config</configPackage>
+                                <configPackage>io.github.jerryt92.jrag.config</configPackage>
                                 <dateLibrary>java11</dateLibrary>
                                 <interfaceOnly>true</interfaceOnly>
                                 <useTags>true</useTags>

@@ -46,7 +46,7 @@
         <!-- 设置java.sql包下的日志只打印INFO及以上级别的日志,此设置可以支持sql语句的日志打印 -->
         <logger name="java.sql" level="INFO" additivity="false">
         </logger>
-        <logger name="io.github.jerrt92.jrag" level="INFO" additivity="true">
+        <logger name="io.github.jerryt92.jrag" level="INFO" additivity="true">
         </logger>
         <!--建立一个默认的root的logger-->
         <root level="${outputLogLevel}">

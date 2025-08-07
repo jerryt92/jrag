@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.github.jerrt92.jrag</groupId>
+        <groupId>io.github.jerryt92.jrag</groupId>
         <artifactId>jrag</artifactId>
         <version>1.0.1-SNAPSHOT</version>
     </parent>
@@ -86,14 +86,14 @@
                         <configuration>
                             <inputSpec>${project.basedir}/src/main/resources/openapi-interface.yaml</inputSpec>
                             <generatorName>spring</generatorName>
-                            <invokerPackage>io.github.jerrt92.jrag.client</invokerPackage>
-                            <apiPackage>io.github.jerrt92.jrag.model.api</apiPackage>
-                            <modelPackage>io.github.jerrt92.jrag.model</modelPackage>
+                            <invokerPackage>io.github.jerryt92.jrag.client</invokerPackage>
+                            <apiPackage>io.github.jerryt92.jrag.model.api</apiPackage>
+                            <modelPackage>io.github.jerryt92.jrag.model</modelPackage>
                             <generateApis>false</generateApis>
                             <generateModels>true</generateModels>
                             <skipIfSpecIsUnchanged>true</skipIfSpecIsUnchanged>
                             <configOptions>
-                                <configPackage>io.github.jerrt92.jrag.config</configPackage>
+                                <configPackage>io.github.jerryt92.jrag.config</configPackage>
                                 <dateLibrary>java11</dateLibrary>
                                 <interfaceOnly>true</interfaceOnly>
                                 <useTags>true</useTags>

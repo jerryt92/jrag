@@ -56,7 +56,7 @@
             <!--<property name="useJSR310Types" value="false"/>-->
         </javaTypeResolver>
         <!-- 实体类的包名和存放路径 -->
-        <javaModelGenerator targetPackage="io.github.jerrt92.jrag.po.mgb" targetProject="MAVEN">
+        <javaModelGenerator targetPackage="io.github.jerryt92.jrag.po.mgb" targetProject="MAVEN">
             <property name="enableSubPackages" value="true"/>
             <property name="trimStrings" value="true"/>
         </javaModelGenerator>
@@ -68,7 +68,7 @@
         </sqlMapGenerator>
 
         <!-- 生成DAO的包名和位置 -->
-        <javaClientGenerator type="XMLMAPPER" targetPackage="io.github.jerrt92.jrag.mapper.mgb" targetProject="MAVEN">
+        <javaClientGenerator type="XMLMAPPER" targetPackage="io.github.jerryt92.jrag.mapper.mgb" targetProject="MAVEN">
             <property name="enableSubPackages" value="false"/>
         </javaClientGenerator>
 
