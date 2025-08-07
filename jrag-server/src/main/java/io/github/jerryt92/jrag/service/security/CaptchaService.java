@@ -32,8 +32,6 @@ import java.util.concurrent.TimeUnit;
 public class CaptchaService {
     private static final Logger log = LogManager.getLogger(CaptchaService.class);
     final Font iFont;
-    int with = 200;
-    int height = 80;
     // 滑动验证码图片与凹槽尺寸
     private static final int SLIDE_CAPTCHA_WIDTH = 360;
     private static final int SLIDE_CAPTCHA_HEIGHT = 270;
@@ -264,22 +262,32 @@ public class CaptchaService {
     }
 
     private static void drawSlider(Graphics2D g, BufferedImage source, float x, float y, int size, GeneralPath path) {
-        BufferedImage subImage = source.getSubimage((int) x, (int) y, size, size);
-        Graphics2D subGraphics = subImage.createGraphics();
+        // 创建一个全透明的图像
+        BufferedImage slider = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D sliderG = slider.createGraphics();
         try {
-            subGraphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            subGraphics.setComposite(AlphaComposite.Src);
-            // 裁剪并绘制图像
-            subGraphics.setClip(path);
-            subGraphics.drawImage(subImage, 0, 0, null);
-            // 绘制边框（使用 subGraphics 更精确）
-            subGraphics.setStroke(new BasicStroke(2));
-            subGraphics.setColor(Color.GRAY);
-            subGraphics.draw(path);
-            // 将裁剪后的图像绘制到目标图形上下文
-            g.drawImage(subImage, 0, 0, null);
+            sliderG.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            // 填充为全透明
+            sliderG.setComposite(AlphaComposite.Clear);
+            sliderG.fillRect(0, 0, size, size);
+            // 设置为只绘制路径内的内容
+            sliderG.setComposite(AlphaComposite.Src);
+            // 将路径移动到 (0,0) 坐标（因为 subImage 起点是 (x,y)，而 slider 图像坐标是 (0,0)）
+            GeneralPath movedPath = (GeneralPath) path.clone();
+            movedPath.transform(java.awt.geom.AffineTransform.getTranslateInstance(-x, -y));
+            sliderG.setClip(movedPath);
+            // 从原图像裁剪出指定区域并绘制
+            BufferedImage subImage = source.getSubimage((int) x, (int) y, size, size);
+            sliderG.drawImage(subImage, 0, 0, null);
+            // 绘制边框
+            sliderG.setClip(null);
+            sliderG.setStroke(new BasicStroke(2));
+            sliderG.setColor(Color.GRAY);
+            sliderG.draw(movedPath);
+            // 将 slider 图像画到目标 g 上
+            g.drawImage(slider, 0, 0, null);
         } finally {
-            subGraphics.dispose();
+            sliderG.dispose();
         }
     }
 
