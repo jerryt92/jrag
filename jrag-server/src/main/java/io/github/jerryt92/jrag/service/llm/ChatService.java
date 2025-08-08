@@ -94,6 +94,7 @@ public class ChatService {
 
     public void interruptChat(String contextId) {
         SseEmitter sseEmitter = contextEmitterMap.remove(contextId);
+        log.error("interruptChat: " + contextId);
         if (sseEmitter != null) {
             sseEmitter.complete();
         }
