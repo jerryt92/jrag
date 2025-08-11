@@ -1,13 +1,13 @@
 package io.github.jerryt92.jrag.service.llm.tools;
 
 import io.github.jerryt92.jrag.model.ChatModel;
+import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Future;
