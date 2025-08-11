@@ -2,7 +2,7 @@ package io.github.jerryt92.jrag.service.rag.vdb.redis;
 
 import io.github.jerryt92.jrag.mapper.mgb.EmbeddingsItemPoMapper;
 import io.github.jerryt92.jrag.model.EmbeddingModel;
-import io.github.jerryt92.jrag.model.ModelOptionsUtils;
+import org.springframework.ai.model.ModelOptionsUtils;
 import io.github.jerryt92.jrag.po.mgb.EmbeddingsItemPoExample;
 import io.github.jerryt92.jrag.po.mgb.EmbeddingsItemPoWithBLOBs;
 import io.github.jerryt92.jrag.service.rag.vdb.VectorDatabaseService;

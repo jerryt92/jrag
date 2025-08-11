@@ -19,7 +19,7 @@ package io.github.jerryt92.jrag.model.openai;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.github.jerryt92.jrag.model.ModelOptionsUtils;
+import org.springframework.ai.model.ModelOptionsUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.Map;

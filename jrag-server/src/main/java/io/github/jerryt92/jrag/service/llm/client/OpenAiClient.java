@@ -4,7 +4,7 @@ import com.alibaba.fastjson2.JSONObject;
 import io.github.jerryt92.jrag.config.LlmProperties;
 import io.github.jerryt92.jrag.model.ChatModel;
 import io.github.jerryt92.jrag.model.FunctionCallingModel;
-import io.github.jerryt92.jrag.model.ModelOptionsUtils;
+import org.springframework.ai.model.ModelOptionsUtils;
 import io.github.jerryt92.jrag.model.openai.OpenAIModel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
