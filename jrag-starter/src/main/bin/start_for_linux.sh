@@ -54,9 +54,11 @@ function startProcess() {
   then
     echo "java_home HAS NOT BEEN SET. GOING TO USE JAVA AT JAVA_HOME: "
     echo $(java -version)
+    echo Executing: java -cp "${SVC_CP}" $JAVA_OPTS ${MAIN_CLASS} ${other_args}
     nohup java -cp "${SVC_CP}" $JAVA_OPTS ${MAIN_CLASS} ${other_args}> /dev/null 2>&1 &
   else
     echo "java_home HAS BEEN SET TO: "$java_home
+    echo Executing: ${java_home}/bin/java -cp "${SVC_CP}" $JAVA_OPTS ${MAIN_CLASS} ${other_args}
     nohup ${java_home}/bin/java -cp "${SVC_CP}" $JAVA_OPTS ${MAIN_CLASS} ${other_args} > /dev/null 2>&1 &
   fi
 
