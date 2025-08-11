@@ -39,7 +39,7 @@ public class LoginService {
         if (userPos.isEmpty()) {
             return null;
         }
-        UserPo userPo = userPos.getFirst();
+        UserPo userPo = userPos.get(0);
         if (UserUtil.verifyPassword(userPo.getId(), password, userPo.getPasswordHash())) {
             SessionBo sessionBo = new SessionBo();
             sessionBo.setSessionId(UUIDUtil.randomUUID());

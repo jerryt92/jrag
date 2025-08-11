@@ -1,13 +1,13 @@
 package io.github.jerryt92.jrag.service.llm.tools;
 
 import io.github.jerryt92.jrag.model.ChatModel;
+import javax.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -43,9 +43,10 @@ public class FunctionCallingService {
             return toolBean.apply(toolCall.getFunction().getArguments());
         });
         try {
-            // 启动虚拟线程
-            Thread virtualThread = Thread.startVirtualThread(futureTask);
-            virtualThread.setName("FunctionCallingThread-" + toolCall.getFunction().getName());
+            // 启动线程
+            Thread thread = new Thread(futureTask);
+            thread.setName("FunctionCallingThread-" + toolCall.getFunction().getName());
+            thread.start();
         } catch (Throwable t) {
             log.error("", t);
         }

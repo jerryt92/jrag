@@ -53,7 +53,7 @@ public class ChatController extends AbstractWebSocketHandler implements ChatApi 
         }
         SessionBo session = loginService.getSession();
         Thread chatThread = new Thread(() -> chatService.handleChat(sseEmitter, chatRequestDto, session == null ? null : session.getUserId()));
-        Thread.startVirtualThread(chatThread);
+        chatThread.start();
         return sseEmitter;
     }
 

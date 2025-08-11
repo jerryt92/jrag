@@ -1,12 +1,11 @@
 package io.github.jerryt92.jrag.interceptor;
 
 import io.github.jerryt92.jrag.service.security.LoginService;
-import org.springframework.stereotype.Component;
-import org.springframework.web.servlet.HandlerInterceptor;
-
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
  * 全局登录拦截器

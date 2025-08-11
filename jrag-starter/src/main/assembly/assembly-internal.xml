@@ -54,10 +54,4 @@
 			</includes>
 		</fileSet>
 	</fileSets>
-	<files>
-		<file>
-			<source>${project.parent.basedir}/jrag-server/target/jrag-server-${project.version}.jar</source>
-			<outputDirectory>jrag/bundled-jar</outputDirectory>
-		</file>
-	</files>
 </assembly>
