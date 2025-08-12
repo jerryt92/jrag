@@ -9,7 +9,7 @@ import io.github.jerryt92.jrag.po.mgb.ChatContextRecord;
 import io.github.jerryt92.jrag.po.mgb.EmbeddingsItemPoWithBLOBs;
 import io.github.jerryt92.jrag.po.mgb.FilePo;
 import io.github.jerryt92.jrag.service.llm.ChatContextBo;
-import io.github.jerryt92.jrag.utils.MDUtil;
+import io.github.jerryt92.jrag.utils.HashUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
 
@@ -33,7 +33,7 @@ public final class Translator {
         for (EmbeddingModel.EmbeddingsItem item : embeddingsResponse.getData()) {
             EmbeddingsDtoItem embeddingsItem = new EmbeddingsDtoItem();
             try {
-                embeddingsItem.setHash(MDUtil.getMessageDigest(item.getText().getBytes(StandardCharsets.UTF_8), MDUtil.MdAlgorithm.SHA1));
+                embeddingsItem.setHash(HashUtil.getMessageDigest(item.getText().getBytes(StandardCharsets.UTF_8), HashUtil.MdAlgorithm.SHA1));
             } catch (NoSuchAlgorithmException e) {
                 throw new RuntimeException(e);
             }
@@ -70,7 +70,7 @@ public final class Translator {
     public static EmbeddingsItemPoWithBLOBs translateToEmbeddingsItemPo(EmbeddingModel.EmbeddingsItem embeddingsItem, String textChunkId, String description) {
         EmbeddingsItemPoWithBLOBs embeddingsItemPo = new EmbeddingsItemPoWithBLOBs();
         try {
-            embeddingsItemPo.setHash(MDUtil.getMessageDigest(embeddingsItem.getText().getBytes(StandardCharsets.UTF_8), MDUtil.MdAlgorithm.SHA1));
+            embeddingsItemPo.setHash(HashUtil.getMessageDigest(embeddingsItem.getText().getBytes(StandardCharsets.UTF_8), HashUtil.MdAlgorithm.SHA1));
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }

@@ -1,7 +1,7 @@
 package io.github.jerryt92.jrag.service.security;
 
 import io.github.jerryt92.jrag.model.SlideCaptchaResp;
-import io.github.jerryt92.jrag.utils.MDUtil;
+import io.github.jerryt92.jrag.utils.HashUtil;
 import io.github.jerryt92.jrag.utils.UUIDUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -88,7 +88,7 @@ public class CaptchaService {
             slideCaptchaResp.setSliderSize(SLIDE_CAPTCHA_SLIDER_SIZE);
             slideCaptchaResp.setSliderY(y);
             log.info("puzzleX: " + x);
-            String hash = MDUtil.getMessageDigest(bufferedImageToByteArray(puzzleImage, "png"), MDUtil.MdAlgorithm.SHA1);
+            String hash = HashUtil.getMessageDigest(bufferedImageToByteArray(puzzleImage, "png"), HashUtil.MdAlgorithm.SHA1);
             slideCaptchaResp.setHash((hash));
             CaptchaCache captchaCache = new CaptchaCache();
             captchaCache.code = code;
