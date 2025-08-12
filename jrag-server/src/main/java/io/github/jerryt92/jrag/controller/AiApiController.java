@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AiApiController implements AiApiApi {
 
     @Override
-    public ResponseEntity<CheckApCenterApiResponse> checkApCenterApi() {
+    public ResponseEntity<CheckApCenterApiResponse> checkApi() {
         CheckApCenterApiResponse response = new CheckApCenterApiResponse();
         response.setStatus(CheckApCenterApiResponse.StatusEnum.NORMAL);
         response.setDescription("AI center api is normal.");
