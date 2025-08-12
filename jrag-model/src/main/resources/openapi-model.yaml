@@ -258,7 +258,7 @@ components:
           description: 反馈
           enum: [ 0, 1, 2 ]
           x-enum-varnames: [ "NONE", "GOOD", "BAD" ]
-    CheckApCenterApiResponse:
+    CheckApiResponse:
       type: object
       properties:
         status:
