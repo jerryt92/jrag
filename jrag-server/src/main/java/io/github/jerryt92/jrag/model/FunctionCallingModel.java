@@ -2,6 +2,7 @@ package io.github.jerryt92.jrag.model;
 
 import lombok.Data;
 import lombok.experimental.Accessors;
+import org.springframework.ai.model.ModelOptionsUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,7 +38,7 @@ public class FunctionCallingModel {
     public static ChatModel.Message buildToolResponseMessage(Collection<ToolResponse> toolResponses) {
         return new ChatModel.Message()
                 .setRole(ChatModel.Role.TOOL)
-                .setContent("ToolResponseMessage{" + "responses=" + toolResponses + ", messageType=tool}");
+                .setContent(ModelOptionsUtils.toJsonString(toolResponses));
     }
 
     public static Map<String, Object> generateToolParameters(List<Tool.Parameter> parameters) {

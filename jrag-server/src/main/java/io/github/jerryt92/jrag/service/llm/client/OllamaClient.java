@@ -98,6 +98,8 @@ public class OllamaClient extends LlmClient {
             }
             request.setTools(ollamaTools);
         }
+        // Debug
+//        log.info(org.springframework.ai.model.ModelOptionsUtils.toJsonString(request));
         Flux<OllamaModel.ChatResponse> eventStream = webClient.post()
                 .uri(llmProperties.ollamaBaseUrl + "/api/chat")
                 .contentType(MediaType.APPLICATION_JSON)
