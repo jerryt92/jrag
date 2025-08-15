@@ -285,7 +285,7 @@ public final class Translator {
         chatContextRecord.setContextId(chatContextBo.getContextId());
         for (ChatModel.Message message : chatContextBo.getMessages()) {
             if (message.getRole().equals(ChatModel.Role.USER)) {
-                chatContextRecord.setTitle(message.getContent());
+                chatContextRecord.setTitle(message.getContent().length() > 64 ? message.getContent().substring(0, 64) : message.getContent());
                 break;
             }
         }
