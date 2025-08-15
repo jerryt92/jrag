@@ -1,5 +1,6 @@
 package io.github.jerryt92.jrag.service.llm.client;
 
+import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import io.github.jerryt92.jrag.config.LlmProperties;
 import io.github.jerryt92.jrag.model.ChatModel;
@@ -70,7 +71,7 @@ public class OpenAiClient extends LlmClient {
                             }
                             OpenAIModel.ChatCompletionFunction openAiFunction = new OpenAIModel.ChatCompletionFunction()
                                     .setName(toolCall.getFunction().getName())
-                                    .setArguments(toolCall.getFunction().getArguments().toString());
+                                    .setArguments(toolCall.getFunction().getArgumentsStream().toString());
                             openAiToolCall.setFunction(openAiFunction);
                             openAiMessage.getToolCalls().add(openAiToolCall);
                         }
@@ -97,7 +98,7 @@ public class OpenAiClient extends LlmClient {
                         tool.getDescription(),
                         tool.getName(),
                         FunctionCallingModel.generateToolParameters(tool.getParameters()),
-                        false
+                        true
                 );
                 functionTool.setFunction(function);
                 openAiTools.add(functionTool);
@@ -134,7 +135,10 @@ public class OpenAiClient extends LlmClient {
             if (response.trim().equals("[DONE]")) {
                 if (toolCallFunction != null) {
                     // Function calling输出完成
-                    toolCallFunction.setArguments(JSONObject.parseObject(toolCallFunction.getArgumentsStream().toString()));
+                    String argumentsString = "[" + toolCallFunction.getArgumentsStream().toString().replace("}{", "},{") + "]";
+                    List<JSONObject> argumentJsons = JSONArray.parseArray(argumentsString, JSONObject.class);
+                    List<Map<String, Object>> argumentMaps = new ArrayList<>(argumentJsons);
+                    toolCallFunction.setArguments(argumentMaps);
                     ChatModel.ToolCall toolCall = new ChatModel.ToolCall()
                             .setFunction(toolCallFunction);
                     ChatModel.ChatResponse chatResponse = new ChatModel.ChatResponse()

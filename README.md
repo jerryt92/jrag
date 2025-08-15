@@ -13,13 +13,14 @@ Jrag 是一个基于 Java Spring Boot 打造的 RAG（Retrieval-Augmented Genera
 - **多模型支持**：兼容 Ollama 和 OpenAI 风格接口，灵活切换不同的大语言模型。
 - **向量数据库集成**：支持 Milvus 和 Redis 向量数据库，满足不同场景下的性能需求。
 - **Function Calling**：支持函数调用，让LLM能够调用其他系统的API。
+- **MCP支持**：支持 MCP（模型上下文协议），以实现模型工具调用的标准化。
+- MCP Client与LLM交互使用Function Calling技术，而不是Prompt，节约Tokens消耗。
 - **Java生态优化**：专为 Java 开发者设计，简化 RAG 技术在 Java 项目中的集成与应用。
 - **JDK21** ：Jrag 基于JDK21开发，可使用虚拟线程，提升并发性能。
 
 ## 待完善
 
 - **知识库维护**：提供知识库管理功能，支持知识库的创建、导入、导出、删除等操作。
-- **MCP支持**：支持 MCP（模型上下文协议），以实现模型工具调用的标准化。
 
 ## SQLite 初始化
 

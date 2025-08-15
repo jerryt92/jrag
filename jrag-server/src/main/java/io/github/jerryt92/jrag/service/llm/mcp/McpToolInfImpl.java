@@ -1,0 +1,49 @@
+package io.github.jerryt92.jrag.service.llm.mcp;
+
+import com.alibaba.fastjson2.JSONObject;
+import io.github.jerryt92.jrag.model.FunctionCallingModel;
+import io.github.jerryt92.jrag.service.llm.tools.ToolInterface;
+import io.modelcontextprotocol.client.McpSyncClient;
+import io.modelcontextprotocol.spec.McpSchema;
+import org.springframework.ai.model.ModelOptionsUtils;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+public class McpToolInfImpl extends ToolInterface {
+    private final McpSyncClient mcpSyncClient;
+    private final McpSchema.Tool mcpTool;
+
+    public McpToolInfImpl(McpSyncClient mcpSyncClient, McpSchema.Tool mcpTool) {
+        toolInfo.setName(mcpTool.name())
+                .setDescription(mcpTool.description());
+        List<FunctionCallingModel.Tool.Parameter> parameters = new ArrayList<>();
+        Set<String> requiredSet = new HashSet<>(mcpTool.inputSchema().required());
+        for (Map.Entry<String, Object> entry : mcpTool.inputSchema().properties().entrySet()) {
+            FunctionCallingModel.Tool.Parameter parameter = new FunctionCallingModel.Tool.Parameter()
+                    .setName(entry.getKey());
+            JSONObject mcpToolParameterValue = JSONObject.parseObject(ModelOptionsUtils.toJsonString(entry.getValue()));
+            parameter.setType(mcpToolParameterValue.getString("type"))
+                    .setDescription(mcpToolParameterValue.getString("description"))
+                    .setRequired(requiredSet.contains(entry.getKey()));
+            parameters.add(parameter);
+        }
+        toolInfo.setParameters(parameters);
+        this.mcpSyncClient = mcpSyncClient;
+        this.mcpTool = mcpTool;
+    }
+
+    @Override
+    public List<String> apply(List<Map<String, Object>> requests) {
+        List<String> resultList = new ArrayList<>();
+        for (Map<String, Object> request : requests) {
+            McpSchema.CallToolRequest callToolRequest = new McpSchema.CallToolRequest(mcpTool.name(), request);
+            McpSchema.CallToolResult result = mcpSyncClient.callTool(callToolRequest);
+            resultList.add(ModelOptionsUtils.toJsonString(result));
+        }
+        return resultList;
+    }
+}

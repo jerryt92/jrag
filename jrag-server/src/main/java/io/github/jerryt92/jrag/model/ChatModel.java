@@ -137,7 +137,7 @@ public class ChatModel {
         @JsonProperty("name")
         String name;
         @JsonProperty("arguments")
-        Map<String, Object> arguments;
+        List<Map<String, Object>> arguments;
         @JsonProperty("argumentsStream")
         StringBuilder argumentsStream;
     }
