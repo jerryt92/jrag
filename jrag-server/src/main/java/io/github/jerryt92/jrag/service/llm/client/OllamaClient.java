@@ -5,6 +5,8 @@ import io.github.jerryt92.jrag.model.ChatModel;
 import io.github.jerryt92.jrag.model.FunctionCallingModel;
 import io.github.jerryt92.jrag.model.ollama.OllamaModel;
 import io.github.jerryt92.jrag.model.ollama.OllamaOptions;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.WriteBufferWaterMark;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -29,7 +31,10 @@ public class OllamaClient extends LlmClient {
 
     public OllamaClient(LlmProperties llmProperties) {
         super(llmProperties);
-        this.webClient = WebClient.builder().clientConnector(new ReactorClientHttpConnector(HttpClient.create().protocol(HttpProtocol.HTTP11))).build();
+        this.webClient = WebClient.builder()
+                .clientConnector(new ReactorClientHttpConnector(HttpClient.create().protocol(HttpProtocol.HTTP11)))
+                .clientConnector(new ReactorClientHttpConnector(HttpClient.create().option(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(1024 * 1024, 1024 * 1024 * 50))))
+                .build();
     }
 
     private final Set<SseEmitter> functionCallingSet = new HashSet<>();

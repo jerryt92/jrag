@@ -5,6 +5,8 @@ import com.alibaba.fastjson2.JSONObject;
 import io.github.jerryt92.jrag.config.LlmProperties;
 import io.github.jerryt92.jrag.model.ChatModel;
 import io.github.jerryt92.jrag.model.FunctionCallingModel;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.WriteBufferWaterMark;
 import org.springframework.ai.model.ModelOptionsUtils;
 import io.github.jerryt92.jrag.model.openai.OpenAIModel;
 import lombok.extern.slf4j.Slf4j;
@@ -31,11 +33,9 @@ public class OpenAiClient extends LlmClient {
 
     public OpenAiClient(LlmProperties llmProperties) {
         super(llmProperties);
-        this.webClient = WebClient.builder().clientConnector(
-                        new ReactorClientHttpConnector(
-                                HttpClient.create().protocol(HttpProtocol.HTTP11)
-                        )
-                )
+        this.webClient = WebClient.builder()
+                .clientConnector(new ReactorClientHttpConnector(HttpClient.create().protocol(HttpProtocol.HTTP11)))
+                .clientConnector(new ReactorClientHttpConnector(HttpClient.create().option(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(1024 * 1024, 1024 * 1024 * 50))))
                 .baseUrl(llmProperties.openAiBaseUrl)
                 .defaultHeader("Authorization", "Bearer " + llmProperties.openAiKey)
                 .build();
