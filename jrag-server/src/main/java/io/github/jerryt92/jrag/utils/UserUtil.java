@@ -5,7 +5,7 @@ import java.security.NoSuchAlgorithmException;
 public final class UserUtil {
     public static String getPasswordHash(String userId, String password) {
         try {
-            return MDUtil.getMessageDigest((userId + password).getBytes(), MDUtil.MdAlgorithm.SHA256);
+            return HashUtil.getMessageDigest((userId + password).getBytes(), HashUtil.MdAlgorithm.SHA256);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }

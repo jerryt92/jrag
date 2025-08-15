@@ -1,14 +1,15 @@
 package io.github.jerryt92.jrag.service.llm.tools;
 
 import io.github.jerryt92.jrag.model.ChatModel;
+import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -26,15 +27,19 @@ public class FunctionCallingService {
     public void init() {
         // 获取所有实现了ToolInterface接口的bean
         for (ToolInterface toolBean : applicationContext.getBeansOfType(ToolInterface.class).values()) {
-            tools.put(toolBean.getToolInfo().getName(), toolBean);
+            if (tools.containsKey(toolBean.toolInfo.getName())) {
+                throw new RuntimeException("Duplicate tool name: " + toolBean.toolInfo.getName());
+            }
+            tools.put(toolBean.toolInfo.getName(), toolBean);
         }
-        log.info("Loaded {} tools", tools.size());
+        log.info("Loaded {} function calling tools", tools.size());
     }
 
-    public Future<String> functionCalling(ChatModel.ToolCall toolCall) {
+    public Future<List<String>> functionCalling(ChatModel.ToolCall toolCall) {
         // 创建 FutureTask 来包装任务
-        FutureTask<String> futureTask = new FutureTask<>(() -> {
+        FutureTask<List<String>> futureTask = new FutureTask<>(() -> {
             log.info("FunctionCalling: {}", toolCall.getFunction().getName());
+            log.info("FunctionCalling args: {}", toolCall.getFunction().getArguments());
             ToolInterface toolBean = tools.get(toolCall.getFunction().getName());
             if (toolBean == null) {
                 log.error("Tool {} not found", toolCall.getFunction().getName());

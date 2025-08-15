@@ -13,13 +13,14 @@ So far, most open-source RAG platforms are implemented in Python. As a Java deve
 - **Multi-model Support**: Compatible with Ollama and OpenAI-style interfaces, allowing flexible switching between different large language models.
 - **Vector Database Integration**: Supports Milvus and Redis vector databases to meet performance requirements in different scenarios.
 - **Function Calling**: Supports function calling, enabling LLMs to call APIs from other systems.
+- **MCP Support**: Support MCP (Model Context Protocol) to standardize model tool calling.
+- MCP Client interacts with LLM using Function Calling technology instead of Prompt, saving token consumption.
 - **Java Ecosystem Optimization**: Designed specifically for Java developers to simplify the integration and application of RAG technology in Java projects.
 - **JDK21**: Jrag is developed based on JDK21 and can use virtual threads to improve concurrent performance.
 
 ## To Be Improved
 
 - **Knowledge Base Management**: Provide knowledge base management functions, supporting operations such as creation, import, export, and deletion of knowledge bases.
-- **MCP Support**: Support MCP (Model Context Protocol) to standardize model tool calling.
 
 ## SQLite Initialization
 

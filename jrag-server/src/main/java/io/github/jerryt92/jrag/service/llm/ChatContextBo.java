@@ -73,7 +73,7 @@ public class ChatContextBo {
         if (!CollectionUtils.isEmpty(functionCallingService.getTools())) {
             this.tools = new ArrayList<>();
             for (ToolInterface tool : functionCallingService.getTools().values()) {
-                this.tools.add(tool.getToolInfo());
+                this.tools.add(tool.toolInfo);
             }
         }
         this.contextId = contextId;
@@ -157,7 +157,6 @@ public class ChatContextBo {
     protected void toolCallResponse(Collection<FunctionCallingModel.ToolResponse> toolResponses, SseEmitter sseEmitter) {
         lastRequest.getMessages().add(lastFunctionCallingMassage);
         lastRequest.getMessages().add(FunctionCallingModel.buildToolResponseMessage(toolResponses));
-        lastRequest.setTools(null);
         try {
             eventStreamDisposable = llmClient.chat(lastRequest,
                     sseEmitter,
@@ -179,10 +178,12 @@ public class ChatContextBo {
                     for (ChatModel.ToolCall toolCall : response.getMessage().getToolCalls()) {
                         if (toolCall.getFunction() != null) {
                             try {
-                                Future<String> stringFuture = functionCallingService.functionCalling(toolCall);
+                                Future<List<String>> stringFuture = functionCallingService.functionCalling(toolCall);
                                 functionCallingFutures.put(stringFuture, stringFuture);
                                 isWaitingFunction = true;
-                                String result = stringFuture.get();
+                                List<String> result = stringFuture.get();
+                                log.info("FunctionCalling: {}", toolCall.getFunction().getName());
+                                log.info("FunctionCalling result: {}", result);
                                 if (result != null) {
                                     toolCallResponse(Collections.singletonList(
                                             new FunctionCallingModel.ToolResponse()

@@ -5,7 +5,6 @@ import io.github.jerryt92.jrag.model.FunctionCallingModel;
 import io.github.jerryt92.jrag.service.llm.tools.ToolInterface;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -13,19 +12,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
 @Component
-public class WebsiteViewer implements ToolInterface {
-    @Autowired
-    private RestTemplate restTemplate;
+public class WebsiteViewer extends ToolInterface {
+    private final RestTemplate restTemplate;
 
-    @Override
-    public FunctionCallingModel.Tool getToolInfo() {
-        return new FunctionCallingModel.Tool()
-                .setName("view_website_content")
+    public WebsiteViewer(RestTemplate restTemplate) {
+        toolInfo.setName("view_website_content")
                 .setDescription("访问传入的URL，返回解析出的网页内容")
                 .setParameters(
                         Collections.singletonList(
@@ -35,12 +33,17 @@ public class WebsiteViewer implements ToolInterface {
                                         .setDescription("website url")
                         )
                 );
+        this.restTemplate = restTemplate;
     }
 
 
     @Override
-    public String apply(Map<String, Object> request) {
-        return viewWebsiteContent(request.getOrDefault("url", "").toString());
+    public List<String> apply(List<Map<String, Object>> requests) {
+        List<String> results = new ArrayList<>();
+        for (Map<String, Object> request : requests) {
+            results.add(viewWebsiteContent(request.getOrDefault("url", "").toString()));
+        }
+        return results;
     }
 
     private String viewWebsiteContent(String url) {

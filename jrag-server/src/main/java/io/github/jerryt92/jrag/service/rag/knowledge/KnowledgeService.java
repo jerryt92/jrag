@@ -12,7 +12,7 @@ import io.github.jerryt92.jrag.po.mgb.TextChunkPo;
 import io.github.jerryt92.jrag.po.mgb.TextChunkPoExample;
 import io.github.jerryt92.jrag.service.embedding.EmbeddingService;
 import io.github.jerryt92.jrag.service.rag.vdb.VectorDatabaseService;
-import io.github.jerryt92.jrag.utils.MDUtil;
+import io.github.jerryt92.jrag.utils.HashUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -44,7 +44,7 @@ public class KnowledgeService {
         for (KnowledgeAddDto knowledgeAddDto : knowledgeAddDtoList) {
             for (String outline : knowledgeAddDto.getOutline()) {
                 try {
-                    outlineMap.put(MDUtil.getMessageDigest(outline.getBytes(StandardCharsets.UTF_8), MDUtil.MdAlgorithm.SHA1), outline);
+                    outlineMap.put(HashUtil.getMessageDigest(outline.getBytes(StandardCharsets.UTF_8), HashUtil.MdAlgorithm.SHA1), outline);
                 } catch (NoSuchAlgorithmException e) {
                     throw new RuntimeException(e);
                 }
@@ -63,7 +63,7 @@ public class KnowledgeService {
         HashMap<String, EmbeddingModel.EmbeddingsItem> outlineToEmbedMap = new HashMap<>();
         for (EmbeddingModel.EmbeddingsItem embeddingsItem : embed.getData()) {
             try {
-                allEmbedHashcode.add(MDUtil.getMessageDigest(embeddingsItem.getText().getBytes(StandardCharsets.UTF_8), MDUtil.MdAlgorithm.SHA1));
+                allEmbedHashcode.add(HashUtil.getMessageDigest(embeddingsItem.getText().getBytes(StandardCharsets.UTF_8), HashUtil.MdAlgorithm.SHA1));
             } catch (NoSuchAlgorithmException e) {
                 throw new RuntimeException(e);
             }

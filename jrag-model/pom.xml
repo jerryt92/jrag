@@ -36,8 +36,8 @@
             <artifactId>jackson-databind-nullable</artifactId>
         </dependency>
         <dependency>
-            <groupId>javax.validation</groupId>
-            <artifactId>validation-api</artifactId>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
         </dependency>
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
@@ -62,7 +62,6 @@
             <scope>provided</scope>
         </dependency>
     </dependencies>
-
     <build>
         <plugins>
             <plugin>
@@ -94,13 +93,14 @@
                             <skipIfSpecIsUnchanged>true</skipIfSpecIsUnchanged>
                             <configOptions>
                                 <configPackage>io.github.jerryt92.jrag.config</configPackage>
-                                <dateLibrary>java11</dateLibrary>
+                                <dateLibrary>java21</dateLibrary>
                                 <interfaceOnly>true</interfaceOnly>
                                 <useTags>true</useTags>
                                 <hideGenerationTimestamp>true</hideGenerationTimestamp>
                                 <requestMappingMode>none</requestMappingMode>
                                 <skipDefaultInterface>true</skipDefaultInterface>
                                 <openApiNullable>false</openApiNullable>
+                                <useSpringBoot3>true</useSpringBoot3>
                             </configOptions>
                         </configuration>
                     </execution>

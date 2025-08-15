@@ -391,20 +391,20 @@ paths:
       responses:
         '200':
           description: 添加成功
-  /v1/rest/jrag/ap-center/api/check:
+  /v1/rest/jrag/api/check:
     get:
       tags:
         - AiApi
-      summary: 检查ap-center服务api是否可用
-      description: 检查ap-center服务api是否可用
-      operationId: checkApCenterApi
+      summary: 检查服务api是否可用
+      description: 检查服务api是否可用
+      operationId: checkApi
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: './openapi-model.yaml#/components/schemas/CheckApCenterApiResponse'
+                $ref: './openapi-model.yaml#/components/schemas/CheckApiResponse'
 
 components:
   schemas:

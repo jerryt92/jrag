@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "bing-cn-mcp-server": {
+      "type": "sse",
+      "url": "https://mcp.api-inference.modelscope.net/c0d439f3be7e4d/sse"
+    }
+  }
+}

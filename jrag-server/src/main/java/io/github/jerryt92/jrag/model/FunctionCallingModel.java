@@ -31,7 +31,7 @@ public class FunctionCallingModel {
     @Accessors(chain = true)
     public static class ToolResponse {
         String name;
-        String responseData;
+        List<String> responseData;
     }
 
     public static ChatModel.Message buildToolResponseMessage(Collection<ToolResponse> toolResponses) {

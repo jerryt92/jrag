@@ -9,7 +9,7 @@ import java.security.NoSuchAlgorithmException;
  * @author jerryt92.github.io
  * @date 2022/6/20
  */
-public final class MDUtil {
+public final class HashUtil {
     /**
      * 信息摘要
      *

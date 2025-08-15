@@ -2,12 +2,12 @@ package io.github.jerryt92.jrag.service.rag.vdb.redis;
 
 import io.github.jerryt92.jrag.mapper.mgb.EmbeddingsItemPoMapper;
 import io.github.jerryt92.jrag.model.EmbeddingModel;
-import io.github.jerryt92.jrag.model.ModelOptionsUtils;
 import io.github.jerryt92.jrag.po.mgb.EmbeddingsItemPoExample;
 import io.github.jerryt92.jrag.po.mgb.EmbeddingsItemPoWithBLOBs;
 import io.github.jerryt92.jrag.service.rag.vdb.VectorDatabaseService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.ai.model.ModelOptionsUtils;
 import redis.clients.jedis.DefaultJedisClientConfig;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisClientConfig;
@@ -36,6 +36,7 @@ public class RedisVectorService implements VectorDatabaseService {
     private final String username;
     private final String password;
     private final String keyPrefix;
+    private final String idxName;
     private final int dimension;
     private UnifiedJedis jedis;
 
@@ -53,6 +54,7 @@ public class RedisVectorService implements VectorDatabaseService {
         this.username = username;
         this.password = password;
         this.keyPrefix = keyPrefix;
+        this.idxName = keyPrefix + "_idx";
         this.dimension = dimension;
     }
 
@@ -93,13 +95,13 @@ public class RedisVectorService implements VectorDatabaseService {
         try {
             // 检查索引是否存在
             try {
-                jedis.ftInfo("vector_idx");
+                jedis.ftInfo(idxName);
                 // 如果索引存在，则删除索引
-                jedis.ftDropIndex("vector_idx");
-                log.info("Existing index 'vector_idx' dropped.");
+                jedis.ftDropIndex(idxName);
+                log.info("Existing index '" + idxName + "' dropped.");
             } catch (Exception e) {
                 // 如果索引不存在，会抛出异常，无需处理
-                log.info("No existing index 'vector_idx' found, proceeding to create.");
+                log.info("No existing index '" + idxName + "' found, proceeding to create.");
             }
             // 定义向量字段属性
             Map<String, Object> vectorAttrs = new HashMap<>();
@@ -116,8 +118,8 @@ public class RedisVectorService implements VectorDatabaseService {
                     .addTagField("textChunkId")
                     .addHNSWVectorField("vector", vectorAttrs);
             // 创建新索引
-            jedis.ftCreate("vector_idx", IndexOptions.defaultOptions().setDefinition(definition), schema);
-            log.info("Index 'vector_idx' created successfully.");
+            jedis.ftCreate(idxName, IndexOptions.defaultOptions().setDefinition(definition), schema);
+            log.info("Index '" + idxName + "' created successfully.");
         } catch (Exception e) {
             log.error("Error creating index", e);
         }
@@ -130,7 +132,7 @@ public class RedisVectorService implements VectorDatabaseService {
         }
     }
 
-    public void storeEmbedding(EmbeddingsItemPoWithBLOBs embeddingsItemPo) {
+    private void storeEmbedding(EmbeddingsItemPoWithBLOBs embeddingsItemPo) {
         Map<String, Object> embeddingsItem = ModelOptionsUtils.objectToMap(embeddingsItemPo);
         Map<String, String> embeddingsItemMap = embeddingsItem.entrySet()
                 .stream()
@@ -164,7 +166,7 @@ public class RedisVectorService implements VectorDatabaseService {
                 .addParam("BLOB", queryBlob)
                 .dialect(2);
         try {
-            SearchResult result = jedis.ftSearch("vector_idx", query);
+            SearchResult result = jedis.ftSearch(idxName, query);
             List<Document> documents = result.getDocuments();
 
             List<EmbeddingModel.EmbeddingsQueryItem> embeddingsQueryItems = new ArrayList<>();

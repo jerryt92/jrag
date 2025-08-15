@@ -5,7 +5,7 @@ import io.github.jerryt92.jrag.model.FileBo;
 import io.github.jerryt92.jrag.model.Translator;
 import io.github.jerryt92.jrag.po.mgb.FilePo;
 import io.github.jerryt92.jrag.po.mgb.FilePoExample;
-import io.github.jerryt92.jrag.utils.MDUtil;
+import io.github.jerryt92.jrag.utils.HashUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.net.URL;
 import java.util.Date;
@@ -60,8 +60,8 @@ public class FileService {
             if (!multipartFile.isEmpty()) {
                 FileBo fileBo;
                 // 校验MD5和SHA-1
-                String fileMd5 = MDUtil.getMessageDigest(multipartFile.getBytes(), MDUtil.MdAlgorithm.MD5);
-                String fileSha1 = MDUtil.getMessageDigest(multipartFile.getBytes(), MDUtil.MdAlgorithm.SHA1);
+                String fileMd5 = HashUtil.getMessageDigest(multipartFile.getBytes(), HashUtil.MdAlgorithm.MD5);
+                String fileSha1 = HashUtil.getMessageDigest(multipartFile.getBytes(), HashUtil.MdAlgorithm.SHA1);
                 FilePoExample filePoExample = new FilePoExample();
                 filePoExample.createCriteria()
                         .andMd5EqualTo(fileMd5)
@@ -112,8 +112,8 @@ public class FileService {
         try {
             if (!multipartFile.isEmpty()) {
                 // 校验MD5和SHA-1
-                String fileMd5 = MDUtil.getMessageDigest(multipartFile.getBytes(), MDUtil.MdAlgorithm.MD5);
-                String fileSha1 = MDUtil.getMessageDigest(multipartFile.getBytes(), MDUtil.MdAlgorithm.SHA1);
+                String fileMd5 = HashUtil.getMessageDigest(multipartFile.getBytes(), HashUtil.MdAlgorithm.MD5);
+                String fileSha1 = HashUtil.getMessageDigest(multipartFile.getBytes(), HashUtil.MdAlgorithm.SHA1);
                 FilePo oldFilePo = filePoMapper.selectByPrimaryKey(id);
                 if (oldFilePo != null) {
                     // 删除旧文件

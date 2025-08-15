@@ -57,7 +57,7 @@ public class OllamaClient extends LlmClient {
                             OllamaModel.ToolCall ollamaToolCall = new OllamaModel.ToolCall();
                             ollamaToolCall.setFunction(new OllamaModel.ToolCallFunction()
                                     .setName(toolCall.getFunction().getName())
-                                    .setArguments(toolCall.getFunction().getArguments()));
+                                    .setArguments(toolCall.getFunction().getArguments().getFirst()));
                             ollamaMessage.getToolCalls().add(ollamaToolCall);
                         }
                     }
@@ -130,7 +130,7 @@ public class OllamaClient extends LlmClient {
                             .setFunction(
                                     new ChatModel.ToolCallFunction()
                                             .setName(ollamaToolCall.getFunction().getName())
-                                            .setArguments(ollamaToolCall.getFunction().getArguments())
+                                            .setArguments(List.of(ollamaToolCall.getFunction().getArguments()))
                             );
                     toolCalls.add(toolCall);
                 }

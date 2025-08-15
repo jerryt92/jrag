@@ -11,7 +11,7 @@ cd ..
 WORK_DIR=`pwd`
 svc_pid=${WORK_DIR}/proc.pid
 source ${WORK_DIR}/bin/variables.sh
-pid=$(ps -aux | grep ${MAIN_CLASS} | grep -v grep | awk '{print $2}')
+pid=$(ps aux | grep ${MAIN_CLASS} | grep -v grep | awk '{print $2}')
 
 if [ -n "${pid}" ]
 then
