@@ -5,6 +5,8 @@ import io.github.jerryt92.jrag.model.FunctionCallingModel;
 import io.github.jerryt92.jrag.service.llm.tools.ToolInterface;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.spec.McpSchema;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.model.ModelOptionsUtils;
 
@@ -16,7 +18,9 @@ import java.util.Set;
 
 @Slf4j
 public class McpToolInfImpl extends ToolInterface {
-    private final McpSyncClient mcpSyncClient;
+    @Getter
+    @Setter
+    private McpSyncClient mcpSyncClient;
     private final McpSchema.Tool mcpTool;
 
     public McpToolInfImpl(McpSyncClient mcpSyncClient, McpSchema.Tool mcpTool) {
