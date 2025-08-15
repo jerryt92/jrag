@@ -42,8 +42,9 @@ public class FunctionCallingService {
             log.info("FunctionCalling args: {}", toolCall.getFunction().getArguments());
             ToolInterface toolBean = tools.get(toolCall.getFunction().getName());
             if (toolBean == null) {
-                log.error("Tool {} not found", toolCall.getFunction().getName());
-                return null;
+                String format = String.format("Tool %s not found", toolCall.getFunction().getName());
+                log.error(format);
+                return List.of(format);
             }
             return toolBean.apply(toolCall.getFunction().getArguments());
         });
