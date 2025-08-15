@@ -5,6 +5,7 @@ import io.github.jerryt92.jrag.model.FunctionCallingModel;
 import io.github.jerryt92.jrag.service.llm.tools.ToolInterface;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.spec.McpSchema;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.model.ModelOptionsUtils;
 
 import java.util.ArrayList;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@Slf4j
 public class McpToolInfImpl extends ToolInterface {
     private final McpSyncClient mcpSyncClient;
     private final McpSchema.Tool mcpTool;
@@ -47,6 +49,7 @@ public class McpToolInfImpl extends ToolInterface {
             }
             return resultList;
         } catch (Exception e) {
+            log.error("MCP tool error: {}", e.getMessage());
             return List.of("Exception happened");
         }
     }
