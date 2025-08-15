@@ -27,7 +27,10 @@ public class McpToolInfImpl extends ToolInterface {
         toolInfo.setName(mcpTool.name())
                 .setDescription(mcpTool.description());
         List<FunctionCallingModel.Tool.Parameter> parameters = new ArrayList<>();
-        Set<String> requiredSet = new HashSet<>(mcpTool.inputSchema().required());
+        Set<String> requiredSet = new HashSet<>();
+        if (mcpTool.inputSchema().required() != null) {
+            requiredSet.addAll(mcpTool.inputSchema().required());
+        }
         for (Map.Entry<String, Object> entry : mcpTool.inputSchema().properties().entrySet()) {
             FunctionCallingModel.Tool.Parameter parameter = new FunctionCallingModel.Tool.Parameter()
                     .setName(entry.getKey());
