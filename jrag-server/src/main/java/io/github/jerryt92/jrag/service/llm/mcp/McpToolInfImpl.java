@@ -38,12 +38,16 @@ public class McpToolInfImpl extends ToolInterface {
 
     @Override
     public List<String> apply(List<Map<String, Object>> requests) {
-        List<String> resultList = new ArrayList<>();
-        for (Map<String, Object> request : requests) {
-            McpSchema.CallToolRequest callToolRequest = new McpSchema.CallToolRequest(mcpTool.name(), request);
-            McpSchema.CallToolResult result = mcpSyncClient.callTool(callToolRequest);
-            resultList.add(ModelOptionsUtils.toJsonString(result));
+        try {
+            List<String> resultList = new ArrayList<>();
+            for (Map<String, Object> request : requests) {
+                McpSchema.CallToolRequest callToolRequest = new McpSchema.CallToolRequest(mcpTool.name(), request);
+                McpSchema.CallToolResult result = mcpSyncClient.callTool(callToolRequest);
+                resultList.add(ModelOptionsUtils.toJsonString(result));
+            }
+            return resultList;
+        } catch (Exception e) {
+            return List.of("Exception happened");
         }
-        return resultList;
     }
 }
