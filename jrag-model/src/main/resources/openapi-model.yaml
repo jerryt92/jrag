@@ -117,12 +117,48 @@ components:
           description: 文本块
         srcFile:
           $ref: '#/components/schemas/FileDto'
+    KnowledgeGetListDto:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/KnowledgeDto'
+    KnowledgeDto:
+      type: object
+      properties:
+        textChunkId:
+          type: string
+          description: 知识ID（文本块的SHA-1）
+        outline:
+          type: array
+          description: 知识概要（用于嵌入后检索的文本）
+          items:
+            type: string
+        textChunk:
+          type: string
+          description: 文本块
+        embeddingModel:
+          type: string
+          description: 嵌入模型名称
+        embeddingProvider:
+          type: string
+          description: 嵌入模型提供商名称
+        description:
+          type: string
+          description: 描述
+        fileName:
+          type: string
+          description: 文件名
+        fileId:
+          type: integer
+          description: 文件ID
     KnowledgeAddDto:
       type: object
       properties:
-        id:
+        textChunkId:
           type: string
-          description: 知识ID（文本块的SHA-1）
+          description: 文本块ID（文本块的SHA-1）
         outline:
           type: array
           description: 知识概要（用于检索）
@@ -137,10 +173,6 @@ components:
         fileId:
           type: integer
           description: 文件ID
-        classify:
-          type: string
-          description: 分类（/分隔）
-          example: 数通/配置
         fileLocation:
           type: string
           description: 文件中的位置

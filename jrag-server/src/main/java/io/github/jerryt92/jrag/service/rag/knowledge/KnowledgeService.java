@@ -1,13 +1,18 @@
 package io.github.jerryt92.jrag.service.rag.knowledge;
 
 import io.github.jerryt92.jrag.mapper.mgb.EmbeddingsItemPoMapper;
+import io.github.jerryt92.jrag.mapper.mgb.FilePoMapper;
 import io.github.jerryt92.jrag.mapper.mgb.TextChunkPoMapper;
 import io.github.jerryt92.jrag.model.EmbeddingModel;
 import io.github.jerryt92.jrag.model.KnowledgeAddDto;
+import io.github.jerryt92.jrag.model.KnowledgeDto;
+import io.github.jerryt92.jrag.model.KnowledgeGetListDto;
 import io.github.jerryt92.jrag.model.Translator;
 import io.github.jerryt92.jrag.po.mgb.EmbeddingsItemPo;
 import io.github.jerryt92.jrag.po.mgb.EmbeddingsItemPoExample;
 import io.github.jerryt92.jrag.po.mgb.EmbeddingsItemPoWithBLOBs;
+import io.github.jerryt92.jrag.po.mgb.FilePo;
+import io.github.jerryt92.jrag.po.mgb.FilePoExample;
 import io.github.jerryt92.jrag.po.mgb.TextChunkPo;
 import io.github.jerryt92.jrag.po.mgb.TextChunkPoExample;
 import io.github.jerryt92.jrag.service.embedding.EmbeddingService;
@@ -31,12 +36,55 @@ public class KnowledgeService {
     private final TextChunkPoMapper textChunkPoMapper;
     private final EmbeddingsItemPoMapper embeddingsItemPoMapper;
     private final VectorDatabaseService vectorDatabaseService;
+    private final FilePoMapper filePoMapper;
 
-    public KnowledgeService(EmbeddingService embeddingService, TextChunkPoMapper textChunkPoMapper, EmbeddingsItemPoMapper embeddingsItemPoMapper, VectorDatabaseService vectorDatabaseService) {
+    public KnowledgeService(EmbeddingService embeddingService, TextChunkPoMapper textChunkPoMapper, EmbeddingsItemPoMapper embeddingsItemPoMapper, VectorDatabaseService vectorDatabaseService, FilePoMapper filePoMapper) {
         this.embeddingService = embeddingService;
         this.textChunkPoMapper = textChunkPoMapper;
         this.embeddingsItemPoMapper = embeddingsItemPoMapper;
         this.vectorDatabaseService = vectorDatabaseService;
+        this.filePoMapper = filePoMapper;
+    }
+
+    public KnowledgeGetListDto getKnowledge(Integer offset, Integer limit) {
+        KnowledgeGetListDto knowledgeGetListDto = new KnowledgeGetListDto();
+        TextChunkPoExample textChunkPoExample = new TextChunkPoExample();
+        textChunkPoExample.setOffset(offset);
+        textChunkPoExample.setRows(limit);
+        // 获取所有textChunk
+        List<TextChunkPo> textChunkPos = textChunkPoMapper.selectByExampleWithBLOBs(textChunkPoExample);
+        if (CollectionUtils.isEmpty(textChunkPos)) {
+            return knowledgeGetListDto;
+        }
+        // 获取所有embeddingsItem
+        List<String> textId = new ArrayList<>(new HashSet<>(textChunkPos.stream().map(TextChunkPo::getId).collect(Collectors.toList())));
+        EmbeddingsItemPoExample embeddingsItemPoExample = new EmbeddingsItemPoExample();
+        embeddingsItemPoExample.createCriteria().andTextChunkIdIn(textId);
+        List<EmbeddingsItemPoWithBLOBs> embeddingsItemPos = embeddingsItemPoMapper.selectByExampleWithBLOBs(embeddingsItemPoExample);
+        Map<String, List<EmbeddingsItemPoWithBLOBs>> textChunkHashToEmbeddingsItemPo = new HashMap<>();
+        for (EmbeddingsItemPoWithBLOBs embeddingsItemPo : embeddingsItemPos) {
+            textChunkHashToEmbeddingsItemPo.computeIfAbsent(embeddingsItemPo.getTextChunkId(), k -> new ArrayList<>())
+                    .add(embeddingsItemPo);
+        }
+        // 获取所有file
+        List<Integer> fileId = new ArrayList<>(new HashSet<>(textChunkPos.stream().map(TextChunkPo::getSrcFileId).collect(Collectors.toList())));
+        FilePoExample filePoExample = new FilePoExample();
+        filePoExample.createCriteria().andIdIn(fileId);
+        List<FilePo> filePos = filePoMapper.selectByExample(filePoExample);
+        Map<Integer, FilePo> fileIdToFilePo = new HashMap<>();
+        for (FilePo filePo : filePos) {
+            fileIdToFilePo.put(filePo.getId(), filePo);
+        }
+        List<KnowledgeDto> knowledgeDtoList = new ArrayList<>();
+        for (TextChunkPo textChunkPo : textChunkPos) {
+            knowledgeDtoList.add(Translator.translateToKnowledgeDto(
+                    textChunkPo,
+                    textChunkHashToEmbeddingsItemPo.get(textChunkPo.getId()),
+                    fileIdToFilePo.get(textChunkPo.getSrcFileId())
+            ));
+        }
+        knowledgeGetListDto.setData(knowledgeDtoList);
+        return knowledgeGetListDto;
     }
 
     public void putKnowledge(List<KnowledgeAddDto> knowledgeAddDtoList) {
@@ -51,7 +99,7 @@ public class KnowledgeService {
             }
         }
         TextChunkPoExample textChunkPoExample = new TextChunkPoExample();
-        textChunkPoExample.createCriteria().andIdIn(knowledgeAddDtoList.stream().map(KnowledgeAddDto::getId).collect(Collectors.toList()));
+        textChunkPoExample.createCriteria().andIdIn(knowledgeAddDtoList.stream().map(KnowledgeAddDto::getTextChunkId).collect(Collectors.toList()));
         HashSet<String> existingTextChunkIds = new HashSet<>();
         List<TextChunkPo> textChunkPoList = textChunkPoMapper.selectByExampleWithBLOBs(textChunkPoExample);
         if (!CollectionUtils.isEmpty(textChunkPoList)) {
@@ -82,7 +130,7 @@ public class KnowledgeService {
         List<TextChunkPo> updateTextChunkPoList = new ArrayList<>();
         for (KnowledgeAddDto knowledgeAddDto : knowledgeAddDtoList) {
             TextChunkPo textChunkPo = new TextChunkPo();
-            textChunkPo.setId(knowledgeAddDto.getId());
+            textChunkPo.setId(knowledgeAddDto.getTextChunkId());
             textChunkPo.setTextChunk(knowledgeAddDto.getTextChunk());
             textChunkPo.setSrcFileId(knowledgeAddDto.getFileId());
             textChunkPo.setDescription(knowledgeAddDto.getOutline().get(0));

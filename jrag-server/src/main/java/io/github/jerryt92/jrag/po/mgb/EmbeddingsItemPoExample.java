@@ -497,6 +497,76 @@ public class EmbeddingsItemPoExample {
             return (Criteria) this;
         }
 
+        public Criteria andTextChunkIdIsNull() {
+            addCriterion("text_chunk_id is null");
+            return (Criteria) this;
+        }
+
+        public Criteria andTextChunkIdIsNotNull() {
+            addCriterion("text_chunk_id is not null");
+            return (Criteria) this;
+        }
+
+        public Criteria andTextChunkIdEqualTo(String value) {
+            addCriterion("text_chunk_id =", value, "textChunkId");
+            return (Criteria) this;
+        }
+
+        public Criteria andTextChunkIdNotEqualTo(String value) {
+            addCriterion("text_chunk_id <>", value, "textChunkId");
+            return (Criteria) this;
+        }
+
+        public Criteria andTextChunkIdGreaterThan(String value) {
+            addCriterion("text_chunk_id >", value, "textChunkId");
+            return (Criteria) this;
+        }
+
+        public Criteria andTextChunkIdGreaterThanOrEqualTo(String value) {
+            addCriterion("text_chunk_id >=", value, "textChunkId");
+            return (Criteria) this;
+        }
+
+        public Criteria andTextChunkIdLessThan(String value) {
+            addCriterion("text_chunk_id <", value, "textChunkId");
+            return (Criteria) this;
+        }
+
+        public Criteria andTextChunkIdLessThanOrEqualTo(String value) {
+            addCriterion("text_chunk_id <=", value, "textChunkId");
+            return (Criteria) this;
+        }
+
+        public Criteria andTextChunkIdLike(String value) {
+            addCriterion("text_chunk_id like", value, "textChunkId");
+            return (Criteria) this;
+        }
+
+        public Criteria andTextChunkIdNotLike(String value) {
+            addCriterion("text_chunk_id not like", value, "textChunkId");
+            return (Criteria) this;
+        }
+
+        public Criteria andTextChunkIdIn(List<String> values) {
+            addCriterion("text_chunk_id in", values, "textChunkId");
+            return (Criteria) this;
+        }
+
+        public Criteria andTextChunkIdNotIn(List<String> values) {
+            addCriterion("text_chunk_id not in", values, "textChunkId");
+            return (Criteria) this;
+        }
+
+        public Criteria andTextChunkIdBetween(String value1, String value2) {
+            addCriterion("text_chunk_id between", value1, value2, "textChunkId");
+            return (Criteria) this;
+        }
+
+        public Criteria andTextChunkIdNotBetween(String value1, String value2) {
+            addCriterion("text_chunk_id not between", value1, value2, "textChunkId");
+            return (Criteria) this;
+        }
+
         public Criteria andDescriptionIsNull() {
             addCriterion("description is null");
             return (Criteria) this;

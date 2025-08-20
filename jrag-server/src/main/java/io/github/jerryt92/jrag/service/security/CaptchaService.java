@@ -51,7 +51,7 @@ public class CaptchaService {
 
     private static final ConcurrentHashMap<String, CaptchaCache> captchaCacheMap = new ConcurrentHashMap<>();
 
-    public CaptchaService() throws IOException, FontFormatException {
+    public CaptchaService() {
         iFont = new Font("Arial", Font.PLAIN, 12);
     }
 

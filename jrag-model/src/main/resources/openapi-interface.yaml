@@ -125,7 +125,7 @@ paths:
             application/json:
               schema:
                 $ref: './openapi-model.yaml#/components/schemas/EmbeddingsResponseDto'
-  /private/jrag/file:
+  /v1/rest/jrag/file:
     post:
       tags: [ File ]
       summary: 上传文件
@@ -227,7 +227,32 @@ paths:
                 format: binary
         404:
           description: not found
-  /private/jrag/knowledge:
+  /v1/rest/jrag/knowledge:
+    get:
+      tags: [ Knowledge ]
+      summary: 查询知识数据
+      description: 查询知识数据
+      operationId: getKnowledge
+      parameters:
+        - name: offset
+          in: query
+          description: 偏移量
+          required: true
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: 获取数量
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: './openapi-model.yaml#/components/schemas/KnowledgeGetListDto'
     put:
       tags: [ Knowledge ]
       summary: 覆盖知识数据
@@ -243,7 +268,7 @@ paths:
       responses:
         "200":
           description: ok
-  /private/jrag/knowledge/search:
+  /v1/rest/jrag/knowledge/search:
     get:
       tags: [ Knowledge ]
       summary: 搜索知识

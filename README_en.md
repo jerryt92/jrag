@@ -2,7 +2,11 @@
 
 [简体中文](README.md)
 
-Jrag is a Retrieval-Augmented Generation (RAG) platform built on Java Spring Boot, designed to enhance the application of large language models in the Java ecosystem by combining retrieval and generation technologies. The platform supports integration with mainstream large language model interfaces, including Ollama and OpenAI, and integrates two vector databases, Milvus and Redis, to provide efficient vector storage and retrieval services.
+Jrag is a RAG (Retrieval-Augmented Generation) and MCP tool integration platform based on Java Spring Boot, designed to enhance the application capabilities of large language models within the Java ecosystem by combining retrieval, MCP tools, and generative AI model technologies. The platform supports integration with various mainstream large language model interfaces, including Ollama and OpenAI, and incorporates Milvus and Redis as vector databases to provide efficient vector storage and retrieval services.
+
+## Architecture
+
+![architecture](assets/architecture.png)
 
 ## Purpose
 

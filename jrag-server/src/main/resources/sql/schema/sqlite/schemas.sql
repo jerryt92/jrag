@@ -31,7 +31,7 @@ create table embeddings_item
     embedding_provider varchar(32) not null,
     text               text        not null,
     embedding          text        not null,
-    text_chunk_id      text        not null,
+    text_chunk_id      char(40)    not null,
     description        varchar(128),
     create_time        bigint,
     update_time        bigint

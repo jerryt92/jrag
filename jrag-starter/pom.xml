@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.github.jerryt92.jrag</groupId>
         <artifactId>jrag</artifactId>
-        <version>1.0.1-SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>jrag-starter</artifactId>

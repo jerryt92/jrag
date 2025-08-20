@@ -2,6 +2,7 @@ package io.github.jerryt92.jrag.controller;
 
 import io.github.jerryt92.jrag.model.EmbeddingModel;
 import io.github.jerryt92.jrag.model.KnowledgeAddDto;
+import io.github.jerryt92.jrag.model.KnowledgeGetListDto;
 import io.github.jerryt92.jrag.model.KnowledgeSearchResponseDto;
 import io.github.jerryt92.jrag.model.Translator;
 import io.github.jerryt92.jrag.server.api.KnowledgeApi;
@@ -21,6 +22,11 @@ public class KnowledgeController implements KnowledgeApi {
     public KnowledgeController(KnowledgeService knowledgeService, Retriever retriever) {
         this.knowledgeService = knowledgeService;
         this.retriever = retriever;
+    }
+
+    @Override
+    public ResponseEntity<KnowledgeGetListDto> getKnowledge(Integer offset, Integer limit) {
+        return ResponseEntity.ok(knowledgeService.getKnowledge(offset, limit));
     }
 
     @Override

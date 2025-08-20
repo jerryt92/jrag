@@ -10,7 +10,7 @@ CREATE TABLE embeddings_item
     embedding_provider varchar(32) NOT NULL COMMENT '嵌入模型提供商名称',
     text               text        NOT NULL COMMENT '嵌入文本',
     embedding          text        NOT NULL COMMENT '嵌入向量',
-    text_chunk_id      text        NOT NULL COMMENT '文本块ID',
+    text_chunk_id      char(40)        NOT NULL COMMENT '文本块ID',
     description        varchar(128) DEFAULT NULL COMMENT '描述',
     create_time        bigint       DEFAULT NULL COMMENT '创建时间',
     update_time        bigint       DEFAULT NULL COMMENT '更新时间',

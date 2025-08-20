@@ -8,6 +8,7 @@ import io.github.jerryt92.jrag.po.mgb.ChatContextItemWithBLOBs;
 import io.github.jerryt92.jrag.po.mgb.ChatContextRecord;
 import io.github.jerryt92.jrag.po.mgb.EmbeddingsItemPoWithBLOBs;
 import io.github.jerryt92.jrag.po.mgb.FilePo;
+import io.github.jerryt92.jrag.po.mgb.TextChunkPo;
 import io.github.jerryt92.jrag.service.llm.ChatContextBo;
 import io.github.jerryt92.jrag.utils.HashUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -17,9 +18,11 @@ import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public final class Translator {
     public static EmbeddingModel.EmbeddingsRequest translateToEmbeddingsRequest(EmbeddingsRequestDto requestDto) {
@@ -321,5 +324,18 @@ public final class Translator {
             chatContextItemWithBLOBs.add(chatContextItem);
         }
         return chatContextItemWithBLOBs;
+    }
+
+    public static KnowledgeDto translateToKnowledgeDto(TextChunkPo textChunkPo, List<EmbeddingsItemPoWithBLOBs> embeddingsItemPos, FilePo filePo) {
+        KnowledgeDto knowledgeDto = new KnowledgeDto();
+        knowledgeDto.setTextChunkId(textChunkPo.getId());
+        knowledgeDto.setOutline(embeddingsItemPos.stream().map(EmbeddingsItemPoWithBLOBs::getText).collect(Collectors.toList()));
+        knowledgeDto.setTextChunk(textChunkPo.getTextChunk());
+        knowledgeDto.setEmbeddingModel(CollectionUtils.isEmpty(embeddingsItemPos) ? null : embeddingsItemPos.getFirst().getEmbeddingModel());
+        knowledgeDto.setEmbeddingProvider(CollectionUtils.isEmpty(embeddingsItemPos) ? null : embeddingsItemPos.getFirst().getEmbeddingProvider());
+        knowledgeDto.setDescription(textChunkPo.getDescription());
+        knowledgeDto.setFileName(filePo == null ? null : filePo.getFullFileName());
+        knowledgeDto.setFileId(filePo == null ? null : filePo.getId());
+        return knowledgeDto;
     }
 }
