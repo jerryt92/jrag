@@ -25,6 +25,7 @@ So far, most open-source RAG platforms are implemented in Python. As a Java deve
 ## To Be Improved
 
 - **Rerank**：Provide reranking capabilities to improve relevance.
+- **Streamable HTTP transport layer compatible with MCP protocol (awaiting Spring AI Release).**
 - **Knowledge Base Management**: Provide knowledge base management functions, supporting operations such as creation, import, export, and deletion of knowledge bases.
 
 ## SQLite Initialization
