@@ -24,6 +24,7 @@ Jrag 是一个基于 Java Spring Boot 的 RAG（Retrieval-Augmented Generation�
 
 ## 待完善
 
+- **Rerank**：提供 Rerank 功能，以实现对检索结果的排序和过滤。
 - **知识库维护**：提供知识库管理功能，支持知识库的创建、导入、导出、删除等操作。
 
 ## SQLite 初始化
