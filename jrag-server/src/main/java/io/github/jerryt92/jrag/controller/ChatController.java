@@ -7,6 +7,7 @@ import io.github.jerryt92.jrag.model.ChatResponseDto;
 import io.github.jerryt92.jrag.model.ContextIdDto;
 import io.github.jerryt92.jrag.model.HistoryContextList;
 import io.github.jerryt92.jrag.model.MessageFeedbackRequest;
+import io.github.jerryt92.jrag.model.SseCallback;
 import io.github.jerryt92.jrag.model.Translator;
 import io.github.jerryt92.jrag.model.security.SessionBo;
 import io.github.jerryt92.jrag.server.api.ChatApi;
@@ -52,8 +53,20 @@ public class ChatController extends AbstractWebSocketHandler implements ChatApi 
             sseEmitter.completeWithError(e);
         }
         SessionBo session = loginService.getSession();
-        Thread chatThread = new Thread(() -> chatService.handleChat(sseEmitter, chatRequestDto, session == null ? null : session.getUserId()));
-        Thread.startVirtualThread(chatThread);
+        SseCallback sseCallback = new SseCallback(
+                UUIDUtil.randomUUID(),
+                chatResponse -> {
+                    try {
+                        sseEmitter.send(chatResponse);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                },
+                sseEmitter::complete,
+                sseEmitter::completeWithError,
+                sseEmitter::complete
+        );
+        Thread.startVirtualThread(() -> chatService.handleChat(sseCallback, chatRequestDto, session == null ? null : session.getUserId()));
         return sseEmitter;
     }
 

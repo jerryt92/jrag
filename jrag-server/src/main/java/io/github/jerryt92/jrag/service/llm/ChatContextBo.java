@@ -5,6 +5,7 @@ import io.github.jerryt92.jrag.model.ChatModel;
 import io.github.jerryt92.jrag.model.ChatRequestDto;
 import io.github.jerryt92.jrag.model.ChatResponseDto;
 import io.github.jerryt92.jrag.model.FunctionCallingModel;
+import io.github.jerryt92.jrag.model.SseCallback;
 import io.github.jerryt92.jrag.model.Translator;
 import io.github.jerryt92.jrag.service.llm.client.LlmClient;
 import io.github.jerryt92.jrag.service.llm.tools.FunctionCallingService;
@@ -13,10 +14,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.CollectionUtils;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.Disposable;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -85,7 +84,7 @@ public class ChatContextBo {
         lastRequestTime = System.currentTimeMillis();
     }
 
-    public void chat(ChatRequestDto chatRequestDto, SseEmitter sseEmitter) {
+    public void chat(ChatRequestDto chatRequestDto, SseCallback sseCallback) {
         try {
             ChatModel.ChatRequest chatRequest = Translator.translateToChatRequest(chatRequestDto);
             messages = chatRequest.getMessages();
@@ -119,57 +118,53 @@ public class ChatContextBo {
                     request.setTools(tools);
                 }
                 eventStreamDisposable = llmClient.chat(request,
-                        sseEmitter,
-                        chatResponse -> consumeResponse(chatResponse, sseEmitter),
-                        e -> onError(e, sseEmitter),
-                        () -> onComplete(sseEmitter));
-                sseEmitter.onCompletion(
+                        sseCallback,
+                        chatResponse -> consumeResponse(chatResponse, sseCallback),
+                        e -> onError(e, sseCallback),
+                        () -> onComplete(sseCallback));
+                sseCallback.onSseCompletion =
                         () -> {
                             if (eventStreamDisposable != null && !eventStreamDisposable.isDisposed()) {
                                 eventStreamDisposable.dispose();
                             }
-                            ChatService.contextEmitterMap.remove(contextId);
-                        }
-                );
-                sseEmitter.onTimeout(
+                            ChatService.contextSseCallbackMap.remove(contextId);
+                        };
+                sseCallback.onSseTimeout =
                         () -> {
                             if (eventStreamDisposable != null && !eventStreamDisposable.isDisposed()) {
                                 eventStreamDisposable.dispose();
                             }
-                            ChatService.contextEmitterMap.remove(contextId);
-                        }
-                );
-                sseEmitter.onError(
-                        (e) -> {
-                            if (eventStreamDisposable != null && !eventStreamDisposable.isDisposed()) {
-                                eventStreamDisposable.dispose();
-                            }
-                            ChatService.contextEmitterMap.remove(contextId);
-                        }
-                );
+                            ChatService.contextSseCallbackMap.remove(contextId);
+                        };
+                sseCallback.onSseError = (e) -> {
+                    if (eventStreamDisposable != null && !eventStreamDisposable.isDisposed()) {
+                        eventStreamDisposable.dispose();
+                    }
+                    ChatService.contextSseCallbackMap.remove(contextId);
+                };
             }
         } catch (Throwable t) {
             log.error("", t);
-            onError(t, sseEmitter);
+            onError(t, sseCallback);
         }
     }
 
-    protected void toolCallResponse(Collection<FunctionCallingModel.ToolResponse> toolResponses, SseEmitter sseEmitter) {
+    protected void toolCallResponse(Collection<FunctionCallingModel.ToolResponse> toolResponses, SseCallback sseCallback) {
         lastRequest.getMessages().add(lastFunctionCallingMassage);
         lastRequest.getMessages().add(FunctionCallingModel.buildToolResponseMessage(toolResponses));
         try {
             eventStreamDisposable = llmClient.chat(lastRequest,
-                    sseEmitter,
-                    chatResponse -> consumeResponse(chatResponse, sseEmitter),
-                    e -> onError(e, sseEmitter),
-                    () -> onComplete(sseEmitter));
+                    sseCallback,
+                    chatResponse -> consumeResponse(chatResponse, sseCallback),
+                    e -> onError(e, sseCallback),
+                    () -> onComplete(sseCallback));
         } catch (Throwable t) {
             log.error("", t);
-            onError(t, sseEmitter);
+            onError(t, sseCallback);
         }
     }
 
-    private void consumeResponse(ChatModel.ChatResponse response, SseEmitter sseEmitter) {
+    private void consumeResponse(ChatModel.ChatResponse response, SseCallback sseCallback) {
         try {
             if (Objects.nonNull(response.getMessage())) {
                 if (!CollectionUtils.isEmpty(response.getMessage().getToolCalls())) {
@@ -189,35 +184,31 @@ public class ChatContextBo {
                                             new FunctionCallingModel.ToolResponse()
                                                     .setName(toolCall.getFunction().getName())
                                                     .setResponseData(result)
-                                    ), sseEmitter);
+                                    ), sseCallback);
                                 }
-                                sseEmitter.onCompletion(
+                                sseCallback.onSseCompletion = () -> {
+                                    stringFuture.cancel(true);
+                                    if (eventStreamDisposable != null && !eventStreamDisposable.isDisposed()) {
+                                        eventStreamDisposable.dispose();
+                                    }
+                                    ChatService.contextSseCallbackMap.remove(contextId);
+                                };
+                                sseCallback.onSseTimeout =
                                         () -> {
                                             stringFuture.cancel(true);
                                             if (eventStreamDisposable != null && !eventStreamDisposable.isDisposed()) {
                                                 eventStreamDisposable.dispose();
                                             }
-                                            ChatService.contextEmitterMap.remove(contextId);
-                                        }
-                                );
-                                sseEmitter.onTimeout(
-                                        () -> {
-                                            stringFuture.cancel(true);
-                                            if (eventStreamDisposable != null && !eventStreamDisposable.isDisposed()) {
-                                                eventStreamDisposable.dispose();
-                                            }
-                                            ChatService.contextEmitterMap.remove(contextId);
-                                        }
-                                );
-                                sseEmitter.onError(
+                                            ChatService.contextSseCallbackMap.remove(contextId);
+                                        };
+                                sseCallback.onSseError =
                                         (e) -> {
                                             stringFuture.cancel(true);
                                             if (eventStreamDisposable != null && !eventStreamDisposable.isDisposed()) {
                                                 eventStreamDisposable.dispose();
                                             }
-                                            ChatService.contextEmitterMap.remove(contextId);
-                                        }
-                                );
+                                            ChatService.contextSseCallbackMap.remove(contextId);
+                                        };
                             } catch (Exception e) {
                                 log.error("Function calling error", e);
                             }
@@ -237,35 +228,33 @@ public class ChatContextBo {
             // 不发送系统Prompt给前端
             if (!response.getMessage().getRole().equals(ChatModel.Role.SYSTEM)) {
                 ChatResponseDto chatResponseDto = Translator.translateToChatResponseDto(response, index);
-                sseEmitter.send(chatResponseDto);
+                sseCallback.responseCall.accept(chatResponseDto);
             }
             if (eventStreamDisposable.isDisposed()) {
-                sseEmitter.complete();
+                sseCallback.completeCall.run();
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         } finally {
             isWaitingFunction = false;
         }
     }
 
-    private void onComplete(SseEmitter sseEmitter) {
+    private void onComplete(SseCallback sseCallback) {
         // 流结束
         log.info("回答" + ": " + this.lastAssistantMassage.getContent());
         this.messages.add(this.lastAssistantMassage);
         this.lastAssistantMassage = new ChatModel.Message()
                 .setRole(ChatModel.Role.ASSISTANT)
                 .setContent("");
-        sseEmitter.complete();
+        sseCallback.completeCall.run();
         functionCallingFutures.forEach((future, future1) -> future.cancel(true));
         isWaitingFunction = false;
         chatContextStorageService.storageChatContextToDb(this);
     }
 
-    private void onError(Throwable t, SseEmitter sseEmitter) {
+    private void onError(Throwable t, SseCallback sseCallback) {
         log.error("", t);
         functionCallingFutures.forEach((future, future1) -> future.cancel(true));
         isWaitingFunction = false;
-        sseEmitter.completeWithError(t);
+        sseCallback.errorCall.accept(t);
     }
 }

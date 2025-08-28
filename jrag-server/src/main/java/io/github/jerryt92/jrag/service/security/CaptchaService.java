@@ -69,8 +69,8 @@ public class CaptchaService {
             puzzleG.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             sliderG.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             // 随机生成凹槽位置
-            float x = (float) ((0.7 * Math.random() + 0.1) * (SLIDE_CAPTCHA_WIDTH - SLIDE_CAPTCHA_SLIDER_SIZE));
-            float y = (float) ((0.8 * Math.random() + 0.1) * (SLIDE_CAPTCHA_HEIGHT - SLIDE_CAPTCHA_SLIDER_SIZE));
+            float x = (float) ((0.7 * Math.random() + 0.3) * (SLIDE_CAPTCHA_WIDTH - SLIDE_CAPTCHA_SLIDER_SIZE));
+            float y = (float) ((0.8 * Math.random() + 0.2) * (SLIDE_CAPTCHA_HEIGHT - SLIDE_CAPTCHA_SLIDER_SIZE));
             // 创建凹槽路径
             GeneralPath puzzlePath = createPuzzlePath(puzzleG, x, y, SLIDE_CAPTCHA_SLIDER_SIZE);
             // 绘制凹槽

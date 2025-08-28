@@ -3,6 +3,7 @@ package io.github.jerryt92.jrag.service.llm.client;
 import io.github.jerryt92.jrag.config.LlmProperties;
 import io.github.jerryt92.jrag.model.ChatModel;
 import io.github.jerryt92.jrag.model.FunctionCallingModel;
+import io.github.jerryt92.jrag.model.SseCallback;
 import io.github.jerryt92.jrag.model.ollama.OllamaModel;
 import io.github.jerryt92.jrag.model.ollama.OllamaOptions;
 import io.netty.channel.ChannelOption;
@@ -12,7 +13,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.netty.http.HttpProtocol;
@@ -37,10 +37,10 @@ public class OllamaClient extends LlmClient {
                 .build();
     }
 
-    private final Set<SseEmitter> functionCallingSet = new HashSet<>();
+    private final Set<String> functionCallingSet = new HashSet<>();
 
     @Override
-    public Disposable chat(ChatModel.ChatRequest chatRequest, SseEmitter sseEmitter, Consumer<ChatModel.ChatResponse> onResponse, Consumer<? super Throwable> onError, Runnable onComplete) {
+    public Disposable chat(ChatModel.ChatRequest chatRequest, SseCallback sseCallback, Consumer<ChatModel.ChatResponse> onResponse, Consumer<? super Throwable> onError, Runnable onComplete) {
         List<OllamaModel.Message> messagesContext = new ArrayList<>();
         for (ChatModel.Message chatMessage : chatRequest.getMessages()) {
             OllamaModel.Message ollamaMessage = new OllamaModel.Message()
@@ -108,28 +108,28 @@ public class OllamaClient extends LlmClient {
                 .retrieve()
                 .bodyToFlux(OllamaModel.ChatResponse.class)
                 .doOnError(t -> {
-                    functionCallingSet.remove(sseEmitter);
+                    functionCallingSet.remove(sseCallback.subscriptionId);
                     if (onError != null) {
                         onError.accept(t);
                     }
                 }).doOnComplete(() -> {
-                    if (!functionCallingSet.remove(sseEmitter)) {
+                    if (!functionCallingSet.remove(sseCallback.subscriptionId)) {
                         if (onComplete != null) {
                             onComplete.run();
                         }
                     }
                 });
-        return eventStream.subscribe(ollamaResponse -> this.consumeResponse(ollamaResponse, onResponse, sseEmitter));
+        return eventStream.subscribe(ollamaResponse -> this.consumeResponse(ollamaResponse, onResponse, sseCallback));
     }
 
-    private void consumeResponse(OllamaModel.ChatResponse ollamaResponse, Consumer<ChatModel.ChatResponse> onResponse, SseEmitter sseEmitter) {
+    private void consumeResponse(OllamaModel.ChatResponse ollamaResponse, Consumer<ChatModel.ChatResponse> onResponse, SseCallback sseCallback) {
         List<ChatModel.ToolCall> toolCalls = null;
         if (ollamaResponse == null) {
-            sseEmitter.complete();
+            sseCallback.completeCall.run();
         }
         if (!CollectionUtils.isEmpty(ollamaResponse.getMessage().getToolCalls())) {
             // 模型有function calling请求
-            functionCallingSet.add(sseEmitter);
+            functionCallingSet.add(sseCallback.subscriptionId);
             toolCalls = new ArrayList<>();
             for (OllamaModel.ToolCall ollamaToolCall : ollamaResponse.getMessage().getToolCalls()) {
                 if (ollamaToolCall.getFunction() != null) {
@@ -143,7 +143,7 @@ public class OllamaClient extends LlmClient {
                 }
             }
         }
-        if (ollamaResponse.getDone() && functionCallingSet.contains(sseEmitter)) {
+        if (ollamaResponse.getDone() && functionCallingSet.contains(sseCallback.subscriptionId)) {
             return;
         }
         ChatModel.ChatResponse chatResponse = new ChatModel.ChatResponse()

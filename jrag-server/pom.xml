@@ -109,7 +109,6 @@
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
-            <version>1.18.1</version>
         </dependency>
         <dependency>
             <groupId>io.milvus</groupId>
@@ -132,7 +131,6 @@
             <artifactId>spring-ai-autoconfigure-mcp-client</artifactId>
         </dependency>
     </dependencies>
-
     <profiles>
         <profile>
             <id>stand-alone</id>
@@ -158,6 +156,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
+                    <compilerArgs>
+                        <arg>-parameters</arg>
+                    </compilerArgs>
                     <source>21</source>
                     <target>21</target>
                     <encoding>UTF-8</encoding>
@@ -228,6 +229,7 @@
                                 <skipDefaultInterface>true</skipDefaultInterface>
                                 <openApiNullable>false</openApiNullable>
                                 <useSpringBoot3>true</useSpringBoot3>
+                                <useJakartaEe>true</useJakartaEe>
                             </configOptions>
                         </configuration>
                     </execution>

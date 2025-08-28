@@ -5,16 +5,16 @@ import com.alibaba.fastjson2.JSONObject;
 import io.github.jerryt92.jrag.config.LlmProperties;
 import io.github.jerryt92.jrag.model.ChatModel;
 import io.github.jerryt92.jrag.model.FunctionCallingModel;
+import io.github.jerryt92.jrag.model.SseCallback;
+import io.github.jerryt92.jrag.model.openai.OpenAIModel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.WriteBufferWaterMark;
-import org.springframework.ai.model.ModelOptionsUtils;
-import io.github.jerryt92.jrag.model.openai.OpenAIModel;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.model.ModelOptionsUtils;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.netty.http.HttpProtocol;
@@ -41,10 +41,10 @@ public class OpenAiClient extends LlmClient {
                 .build();
     }
 
-    private final Map<SseEmitter, ChatModel.ToolCallFunction> functionCallingInfoMap = new HashMap<>();
+    private final Map<String, ChatModel.ToolCallFunction> functionCallingInfoMap = new HashMap<>();
 
     @Override
-    public Disposable chat(ChatModel.ChatRequest chatRequest, SseEmitter sseEmitter, Consumer<ChatModel.ChatResponse> onResponse, Consumer<? super Throwable> onError, Runnable onComplete) {
+    public Disposable chat(ChatModel.ChatRequest chatRequest, SseCallback sseCallback, Consumer<ChatModel.ChatResponse> onResponse, Consumer<? super Throwable> onError, Runnable onComplete) {
         List<OpenAIModel.ChatCompletionMessage> messagesContext = new ArrayList<>();
         for (ChatModel.Message chatMessage : chatRequest.getMessages()) {
             OpenAIModel.ChatCompletionMessage openAiMessage = new OpenAIModel.ChatCompletionMessage()
@@ -115,23 +115,23 @@ public class OpenAiClient extends LlmClient {
                 .retrieve()
                 .bodyToFlux(String.class)
                 .doOnError(t -> {
-                    functionCallingInfoMap.remove(sseEmitter);
+                    functionCallingInfoMap.remove(sseCallback.subscriptionId);
                     if (onError != null) {
                         onError.accept(t);
                     }
                 }).doOnComplete(() -> {
-                    if (functionCallingInfoMap.remove(sseEmitter) == null) {
+                    if (functionCallingInfoMap.remove(sseCallback.subscriptionId) == null) {
                         if (onComplete != null) {
                             onComplete.run();
                         }
                     }
                 });
-        return eventStream.subscribe(chatCompletionChunk -> this.consumeResponse(chatCompletionChunk, onResponse, sseEmitter, onError));
+        return eventStream.subscribe(chatCompletionChunk -> this.consumeResponse(chatCompletionChunk, onResponse, sseCallback, onError));
     }
 
-    private void consumeResponse(String response, Consumer<ChatModel.ChatResponse> onResponse, SseEmitter sseEmitter, Consumer<? super Throwable> onError) {
+    private void consumeResponse(String response, Consumer<ChatModel.ChatResponse> onResponse, SseCallback sseCallback, Consumer<? super Throwable> onError) {
         try {
-            ChatModel.ToolCallFunction toolCallFunction = functionCallingInfoMap.get(sseEmitter);
+            ChatModel.ToolCallFunction toolCallFunction = functionCallingInfoMap.get(sseCallback.subscriptionId);
             if (response.trim().equals("[DONE]")) {
                 if (toolCallFunction != null) {
                     // Function calling输出完成
@@ -173,7 +173,7 @@ public class OpenAiClient extends LlmClient {
                             if (toolCallFunction == null) {
                                 toolCallFunction = new ChatModel.ToolCallFunction();
                                 toolCallFunction.setArgumentsStream(new StringBuilder());
-                                functionCallingInfoMap.put(sseEmitter, toolCallFunction);
+                                functionCallingInfoMap.put(sseCallback.subscriptionId, toolCallFunction);
                             }
                             for (OpenAIModel.ToolCall openAiToolCall : openAiToolCalls) {
                                 if (openAiToolCall.getFunction().getName() != null) {

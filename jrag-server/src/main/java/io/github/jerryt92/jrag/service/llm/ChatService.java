@@ -1,11 +1,12 @@
 package io.github.jerryt92.jrag.service.llm;
 
 import io.github.jerryt92.jrag.config.LlmProperties;
-import io.github.jerryt92.jrag.model.ChatModel;
 import io.github.jerryt92.jrag.model.ChatRequestDto;
 import io.github.jerryt92.jrag.model.ChatResponseDto;
+import io.github.jerryt92.jrag.model.FileDto;
 import io.github.jerryt92.jrag.model.MessageDto;
 import io.github.jerryt92.jrag.model.RagInfoDto;
+import io.github.jerryt92.jrag.model.SseCallback;
 import io.github.jerryt92.jrag.model.Translator;
 import io.github.jerryt92.jrag.service.llm.client.LlmClient;
 import io.github.jerryt92.jrag.service.llm.tools.FunctionCallingService;
@@ -14,11 +15,12 @@ import io.github.jerryt92.jrag.utils.UUIDUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,7 +33,7 @@ public class ChatService {
     private final ChatContextStorageService chatContextStorageService;
     private final LlmProperties llmProperties;
     private final Retriever retriever;
-    static Map<String, SseEmitter> contextEmitterMap = new HashMap<>();
+    static Map<String, SseCallback> contextSseCallbackMap = new HashMap<>();
 
     public ChatService(LlmClient llmClient, FunctionCallingService functionCallingService, ChatContextService chatContextService, ChatContextStorageService chatContextStorageService, LlmProperties llmProperties, Retriever retriever) {
         this.llmClient = llmClient;
@@ -42,13 +44,13 @@ public class ChatService {
         this.retriever = retriever;
     }
 
-    public void handleChat(SseEmitter sseEmitter, ChatRequestDto request, String userId) {
+    public void handleChat(SseCallback sseCallback, ChatRequestDto request, String userId) {
         try {
             String contextId = request.getContextId();
             if (contextId == null) {
                 contextId = UUIDUtil.randomUUID();
             }
-            contextEmitterMap.put(contextId, sseEmitter);
+            contextSseCallbackMap.put(contextId, sseCallback);
             // 从src/main/resources/system_prompt.txt中获取
             String systemPrompt = null;
             try (InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("system_prompt.txt")) {
@@ -73,30 +75,32 @@ public class ChatService {
                 }
                 List<RagInfoDto> ragInfoDtos = retriever.retrieveQuery(request);
                 if (!CollectionUtils.isEmpty(ragInfoDtos)) {
-                    ChatResponseDto ragResponseDto = new ChatResponseDto();
-                    ragResponseDto.setMessage(request.getMessages().get(request.getMessages().size() - 1));
-                    sseEmitter.send(ragResponseDto);
-                    ChatModel.ChatResponse srcFileChatResponse = new ChatModel.ChatResponse()
-                            .setMessage(
-                                    new ChatModel.Message()
-                                            .setRole(ChatModel.Role.ASSISTANT)
-                                            .setRagInfos(ragInfoDtos)
-                            );
-                    sseEmitter.send(srcFileChatResponse);
+                    ChatResponseDto srcFileChatResponse = new ChatResponseDto();
+                    MessageDto messageDto = new MessageDto();
+                    messageDto.setRole(MessageDto.RoleEnum.ASSISTANT);
+                    Map<Integer, FileDto> fileDtoList = new LinkedHashMap<>();
+                    for (RagInfoDto ragInfoDto : ragInfoDtos) {
+                        if (ragInfoDto.getSrcFile() != null && !fileDtoList.containsKey(ragInfoDto.getSrcFile().getId())) {
+                            fileDtoList.put(ragInfoDto.getSrcFile().getId(), ragInfoDto.getSrcFile());
+                        }
+                    }
+                    messageDto.setSrcFile(new ArrayList<>(fileDtoList.values()));
+                    srcFileChatResponse.setMessage(messageDto);
+                    sseCallback.responseCall.accept(srcFileChatResponse);
                 }
-                chatContextBo.chat(request, sseEmitter);
+                chatContextBo.chat(request, sseCallback);
                 log.info("问: " + request.getMessages().get(request.getMessages().size() - 1).getContent());
             }
         } catch (Throwable t) {
-            sseEmitter.completeWithError(t);
+            sseCallback.errorCall.accept(t);
         }
     }
 
     public void interruptChat(String contextId) {
-        SseEmitter sseEmitter = contextEmitterMap.remove(contextId);
+        SseCallback sseCallback = contextSseCallbackMap.remove(contextId);
         log.error("interruptChat: " + contextId);
-        if (sseEmitter != null) {
-            sseEmitter.complete();
+        if (sseCallback != null) {
+            sseCallback.completeCall.run();
         }
     }
 }
