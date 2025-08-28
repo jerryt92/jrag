@@ -74,6 +74,7 @@ public class ChatService {
                     request.getMessages().add(request.getMessages().size() - 1, systemPromptMessageDto);
                 }
                 List<RagInfoDto> ragInfoDtos = retriever.retrieveQuery(request);
+                chatContextBo.setLastRagInfos(ragInfoDtos);
                 if (!CollectionUtils.isEmpty(ragInfoDtos)) {
                     ChatResponseDto srcFileChatResponse = new ChatResponseDto();
                     MessageDto messageDto = new MessageDto();

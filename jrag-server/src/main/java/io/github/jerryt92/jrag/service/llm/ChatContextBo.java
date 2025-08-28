@@ -5,6 +5,7 @@ import io.github.jerryt92.jrag.model.ChatModel;
 import io.github.jerryt92.jrag.model.ChatRequestDto;
 import io.github.jerryt92.jrag.model.ChatResponseDto;
 import io.github.jerryt92.jrag.model.FunctionCallingModel;
+import io.github.jerryt92.jrag.model.RagInfoDto;
 import io.github.jerryt92.jrag.model.SseCallback;
 import io.github.jerryt92.jrag.model.Translator;
 import io.github.jerryt92.jrag.service.llm.client.LlmClient;
@@ -58,6 +59,9 @@ public class ChatContextBo {
     private ChatModel.Message lastAssistantMassage = new ChatModel.Message()
             .setRole(ChatModel.Role.ASSISTANT)
             .setContent("");
+
+    @Setter
+    private List<RagInfoDto> lastRagInfos;
 
     private ChatModel.Message lastFunctionCallingMassage = new ChatModel.Message()
             .setRole(ChatModel.Role.ASSISTANT)
@@ -241,10 +245,12 @@ public class ChatContextBo {
     private void onComplete(SseCallback sseCallback) {
         // 流结束
         log.info("回答" + ": " + this.lastAssistantMassage.getContent());
+        this.lastAssistantMassage.setRagInfos(this.lastRagInfos);
         this.messages.add(this.lastAssistantMassage);
         this.lastAssistantMassage = new ChatModel.Message()
                 .setRole(ChatModel.Role.ASSISTANT)
                 .setContent("");
+        this.lastRagInfos = null;
         sseCallback.completeCall.run();
         functionCallingFutures.forEach((future, future1) -> future.cancel(true));
         isWaitingFunction = false;
