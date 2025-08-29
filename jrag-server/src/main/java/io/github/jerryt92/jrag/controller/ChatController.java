@@ -66,6 +66,9 @@ public class ChatController extends AbstractWebSocketHandler implements ChatApi 
                 sseEmitter::completeWithError,
                 sseEmitter::complete
         );
+        sseEmitter.onCompletion(() -> sseCallback.onSseCompletion.run());
+        sseEmitter.onTimeout(() -> sseCallback.onSseTimeout.run());
+        sseEmitter.onError((t) -> sseCallback.onSseError.accept(t));
         Thread.startVirtualThread(() -> chatService.handleChat(sseCallback, chatRequestDto, session == null ? null : session.getUserId()));
         return sseEmitter;
     }
@@ -111,11 +114,16 @@ public class ChatController extends AbstractWebSocketHandler implements ChatApi 
 
     private static String getParam(String param, String url) {
         if (url != null) {
-            String[] params = url.split("&");
-            for (String p : params) {
-                String[] k = p.split("=");
-                if (k[0].equals(param)) {
-                    return k[1];
+            // 找到查询参数部分（?后面的部分）
+            int queryStart = url.indexOf('?');
+            if (queryStart != -1 && queryStart < url.length() - 1) {
+                String queryString = url.substring(queryStart + 1);
+                String[] params = queryString.split("&");
+                for (String p : params) {
+                    String[] keyValue = p.split("=", 2); // 限制分割成2部分
+                    if (keyValue.length >= 1 && keyValue[0].equals(param)) {
+                        return keyValue.length >= 2 ? keyValue[1] : null;
+                    }
                 }
             }
         }

@@ -87,7 +87,6 @@ public class CaptchaService {
             slideCaptchaResp.setSliderUrl("data:image/png;base64," + encoder.encodeToString(bufferedImageToByteArray(sliderImage, "png")));
             slideCaptchaResp.setSliderSize(SLIDE_CAPTCHA_SLIDER_SIZE);
             slideCaptchaResp.setSliderY(y);
-            log.info("puzzleX: " + x);
             String hash = HashUtil.getMessageDigest(bufferedImageToByteArray(puzzleImage, "png"), HashUtil.MdAlgorithm.SHA1);
             slideCaptchaResp.setHash((hash));
             CaptchaCache captchaCache = new CaptchaCache();
