@@ -99,8 +99,8 @@ public class ChatService {
 
     public void interruptChat(String contextId) {
         SseCallback sseCallback = contextSseCallbackMap.remove(contextId);
-        log.error("interruptChat: " + contextId);
         if (sseCallback != null) {
+            log.error("interruptChat: " + contextId);
             sseCallback.completeCall.run();
         }
     }

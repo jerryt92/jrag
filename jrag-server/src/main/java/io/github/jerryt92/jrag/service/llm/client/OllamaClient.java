@@ -9,6 +9,7 @@ import io.github.jerryt92.jrag.model.ollama.OllamaOptions;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.WriteBufferWaterMark;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.model.ModelOptionsUtils;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.util.CollectionUtils;
@@ -19,8 +20,10 @@ import reactor.netty.http.HttpProtocol;
 import reactor.netty.http.client.HttpClient;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -73,17 +76,19 @@ public class OllamaClient extends LlmClient {
             }
             messagesContext.add(ollamaMessage);
         }
+        Map<String, Object> options = new HashMap<>(OllamaOptions.builder()
+                .numCtx(llmProperties.ollamaContextLength)
+                .temperature(llmProperties.temperature)
+                .build().toMap());
+        if (!CollectionUtils.isEmpty(chatRequest.getOptions())) {
+            options.putAll(chatRequest.getOptions());
+        }
         OllamaModel.ChatRequest request = new OllamaModel.ChatRequest()
                 .setModel(llmProperties.ollamaModelName)
                 .setKeepAlive(String.valueOf(llmProperties.ollamaKeepAliveSeconds))
                 .setMessages(messagesContext)
                 .setStream(true)
-                .setOptions(
-                        OllamaOptions.builder()
-                                .numCtx(llmProperties.ollamaContextLength)
-                                .temperature(llmProperties.temperature)
-                                .build().toMap()
-                );
+                .setOptions(options);
         if (!CollectionUtils.isEmpty(chatRequest.getTools())) {
             List<OllamaModel.Tool> ollamaTools = new ArrayList<>();
             for (FunctionCallingModel.Tool tool : chatRequest.getTools()) {
@@ -100,6 +105,7 @@ public class OllamaClient extends LlmClient {
         }
         // Debug
 //        log.info(org.springframework.ai.model.ModelOptionsUtils.toJsonString(request));
+        log.info("context length:{}", ModelOptionsUtils.toJsonString(request).length());
         Flux<OllamaModel.ChatResponse> eventStream = webClient.post()
                 .uri(llmProperties.ollamaBaseUrl + "/api/chat")
                 .contentType(MediaType.APPLICATION_JSON)

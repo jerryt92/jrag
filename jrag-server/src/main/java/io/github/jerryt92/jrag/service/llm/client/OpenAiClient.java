@@ -107,6 +107,7 @@ public class OpenAiClient extends LlmClient {
         }
         // Debug
 //        log.info(ModelOptionsUtils.toJsonString(request));
+        log.info("context length:{}", ModelOptionsUtils.toJsonString(request).length());
         Flux<String> eventStream = webClient.post()
                 .uri(llmProperties.completionsPath)
                 .contentType(MediaType.APPLICATION_JSON)

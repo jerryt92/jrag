@@ -46,6 +46,8 @@ public class OllamaModel {
         List<Tool> tools;
         @JsonProperty("options")
         Map<String, Object> options;
+        @JsonProperty("think")
+        private Boolean think;
     }
 
     /**
