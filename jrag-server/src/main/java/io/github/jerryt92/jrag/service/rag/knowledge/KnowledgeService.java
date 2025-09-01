@@ -1,5 +1,6 @@
 package io.github.jerryt92.jrag.service.rag.knowledge;
 
+import io.github.jerryt92.jrag.config.LlmProperties;
 import io.github.jerryt92.jrag.mapper.mgb.EmbeddingsItemPoMapper;
 import io.github.jerryt92.jrag.mapper.mgb.FilePoMapper;
 import io.github.jerryt92.jrag.mapper.mgb.TextChunkPoMapper;
@@ -37,16 +38,21 @@ public class KnowledgeService {
     private final EmbeddingsItemPoMapper embeddingsItemPoMapper;
     private final VectorDatabaseService vectorDatabaseService;
     private final FilePoMapper filePoMapper;
+    private final LlmProperties llmProperties;
 
-    public KnowledgeService(EmbeddingService embeddingService, TextChunkPoMapper textChunkPoMapper, EmbeddingsItemPoMapper embeddingsItemPoMapper, VectorDatabaseService vectorDatabaseService, FilePoMapper filePoMapper) {
+    public KnowledgeService(EmbeddingService embeddingService, TextChunkPoMapper textChunkPoMapper, EmbeddingsItemPoMapper embeddingsItemPoMapper, VectorDatabaseService vectorDatabaseService, FilePoMapper filePoMapper, LlmProperties llmProperties) {
         this.embeddingService = embeddingService;
         this.textChunkPoMapper = textChunkPoMapper;
         this.embeddingsItemPoMapper = embeddingsItemPoMapper;
         this.vectorDatabaseService = vectorDatabaseService;
         this.filePoMapper = filePoMapper;
+        this.llmProperties = llmProperties;
     }
 
     public KnowledgeGetListDto getKnowledge(Integer offset, Integer limit) {
+        if (!llmProperties.useRag) {
+            throw new RuntimeException("RAG is not enabled");
+        }
         KnowledgeGetListDto knowledgeGetListDto = new KnowledgeGetListDto();
         TextChunkPoExample textChunkPoExample = new TextChunkPoExample();
         textChunkPoExample.setOffset(offset);
@@ -88,6 +94,9 @@ public class KnowledgeService {
     }
 
     public void putKnowledge(List<KnowledgeAddDto> knowledgeAddDtoList) {
+        if (!llmProperties.useRag) {
+            throw new RuntimeException("RAG is not enabled");
+        }
         Map<String, String> outlineMap = new HashMap<>();
         for (KnowledgeAddDto knowledgeAddDto : knowledgeAddDtoList) {
             for (String outline : knowledgeAddDto.getOutline()) {

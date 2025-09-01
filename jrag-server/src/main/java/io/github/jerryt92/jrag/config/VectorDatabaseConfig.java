@@ -33,7 +33,7 @@ public class VectorDatabaseConfig {
     private String redisKeyPrefix;
 
     @Bean
-    public VectorDatabaseService vectorDatabaseService(EmbeddingsItemPoMapper embeddingsItemPoMapper) {
+    public VectorDatabaseService vectorDatabaseService(EmbeddingsItemPoMapper embeddingsItemPoMapper, LlmProperties llmProperties) {
         VectorDatabaseService vectorDatabaseService;
         switch (vectorDatabase) {
             case "milvus":
@@ -44,8 +44,7 @@ public class VectorDatabaseConfig {
                         milvusToken,
                         dimension
                 );
-                vectorDatabaseService.init();
-                return vectorDatabaseService;
+                break;
             case "redis":
                 vectorDatabaseService = new RedisVectorService(
                         embeddingsItemPoMapper,
@@ -56,10 +55,13 @@ public class VectorDatabaseConfig {
                         redisKeyPrefix,
                         dimension
                 );
-                vectorDatabaseService.init();
-                return vectorDatabaseService;
+                break;
             default:
                 throw new RuntimeException("Unknown vector database: " + vectorDatabase);
         }
+        if (llmProperties.useRag) {
+            vectorDatabaseService.init();
+        }
+        return vectorDatabaseService;
     }
 }

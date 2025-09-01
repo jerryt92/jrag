@@ -1,5 +1,6 @@
 package io.github.jerryt92.jrag.controller;
 
+import io.github.jerryt92.jrag.config.CommonProperties;
 import io.github.jerryt92.jrag.config.annotation.AutoRegisterWebSocketHandler;
 import io.github.jerryt92.jrag.model.ChatContextDto;
 import io.github.jerryt92.jrag.model.ChatRequestDto;
@@ -37,11 +38,13 @@ public class ChatController extends AbstractWebSocketHandler implements ChatApi 
     private final ChatContextService chatContextService;
     private final ChatService chatService;
     private final LoginService loginService;
+    private final CommonProperties commonProperties;
 
-    public ChatController(ChatContextService chatContextService, ChatService chatService, LoginService loginService) {
+    public ChatController(ChatContextService chatContextService, ChatService chatService, LoginService loginService, CommonProperties commonProperties) {
         this.chatContextService = chatContextService;
         this.chatService = chatService;
         this.loginService = loginService;
+        this.commonProperties = commonProperties;
     }
 
     @PostMapping("/v1/rest/jrag/chat")
@@ -52,7 +55,7 @@ public class ChatController extends AbstractWebSocketHandler implements ChatApi 
         } catch (IOException e) {
             sseEmitter.completeWithError(e);
         }
-        SessionBo session = loginService.getSession();
+        SessionBo session = commonProperties.publicMode ? null : loginService.getSession();
         SseCallback sseCallback = new SseCallback(
                 UUIDUtil.randomUUID(),
                 chatResponse -> {

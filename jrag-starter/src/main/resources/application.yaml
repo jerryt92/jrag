@@ -14,10 +14,13 @@ jrag:
   security:
     captcha:
       expire-seconds: 300
+  # 是否为公共模式（免登录，历史回话存在于浏览器）
+  public-mode: false
   llm:
     demo: false
     temperature: 0.5
     llm-provider: open-ai
+    use-rag: true
     use-tools: true
     ollama:
 #      model-name: qwen3:14b

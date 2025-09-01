@@ -38,6 +38,24 @@ paths:
           description: Method Not Allowed
         '500':
           description: Internal Server Error
+  /v1/auth/jrag/mode:
+    get:
+      tags: [ Login ]
+      summary: 获取当前模式
+      description: 获取当前模式
+      operationId: getMode
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mode:
+                    type: string
+                    description: 模式
+                    enum: [ public, user ]
   /v1/auth/jrag/login:
     post:
       tags: [ Login ]

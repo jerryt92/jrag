@@ -1,5 +1,6 @@
 package io.github.jerryt92.jrag.service.llm;
 
+import io.github.jerryt92.jrag.config.CommonProperties;
 import io.github.jerryt92.jrag.config.LlmProperties;
 import io.github.jerryt92.jrag.model.ChatRequestDto;
 import io.github.jerryt92.jrag.model.ChatResponseDto;
@@ -34,14 +35,16 @@ public class ChatService {
     private final LlmProperties llmProperties;
     private final Retriever retriever;
     static Map<String, SseCallback> contextSseCallbackMap = new HashMap<>();
+    private final CommonProperties commonProperties;
 
-    public ChatService(LlmClient llmClient, FunctionCallingService functionCallingService, ChatContextService chatContextService, ChatContextStorageService chatContextStorageService, LlmProperties llmProperties, Retriever retriever) {
+    public ChatService(LlmClient llmClient, FunctionCallingService functionCallingService, ChatContextService chatContextService, ChatContextStorageService chatContextStorageService, LlmProperties llmProperties, Retriever retriever, CommonProperties commonProperties) {
         this.llmClient = llmClient;
         this.functionCallingService = functionCallingService;
         this.chatContextService = chatContextService;
         this.chatContextStorageService = chatContextStorageService;
         this.llmProperties = llmProperties;
         this.retriever = retriever;
+        this.commonProperties = commonProperties;
     }
 
     public void handleChat(SseCallback sseCallback, ChatRequestDto request, String userId) {
@@ -73,21 +76,23 @@ public class ChatService {
                     systemPromptMessageDto.setContent(systemPrompt);
                     request.getMessages().add(request.getMessages().size() - 1, systemPromptMessageDto);
                 }
-                List<RagInfoDto> ragInfoDtos = retriever.retrieveQuery(request);
-                chatContextBo.setLastRagInfos(ragInfoDtos);
-                if (!CollectionUtils.isEmpty(ragInfoDtos)) {
-                    ChatResponseDto srcFileChatResponse = new ChatResponseDto();
-                    MessageDto messageDto = new MessageDto();
-                    messageDto.setRole(MessageDto.RoleEnum.ASSISTANT);
-                    Map<Integer, FileDto> fileDtoList = new LinkedHashMap<>();
-                    for (RagInfoDto ragInfoDto : ragInfoDtos) {
-                        if (ragInfoDto.getSrcFile() != null && !fileDtoList.containsKey(ragInfoDto.getSrcFile().getId())) {
-                            fileDtoList.put(ragInfoDto.getSrcFile().getId(), ragInfoDto.getSrcFile());
+                if (llmProperties.useRag) {
+                    List<RagInfoDto> ragInfoDtos = retriever.retrieveQuery(request);
+                    chatContextBo.setLastRagInfos(ragInfoDtos);
+                    if (!CollectionUtils.isEmpty(ragInfoDtos)) {
+                        ChatResponseDto srcFileChatResponse = new ChatResponseDto();
+                        MessageDto messageDto = new MessageDto();
+                        messageDto.setRole(MessageDto.RoleEnum.ASSISTANT);
+                        Map<Integer, FileDto> fileDtoList = new LinkedHashMap<>();
+                        for (RagInfoDto ragInfoDto : ragInfoDtos) {
+                            if (ragInfoDto.getSrcFile() != null && !fileDtoList.containsKey(ragInfoDto.getSrcFile().getId())) {
+                                fileDtoList.put(ragInfoDto.getSrcFile().getId(), ragInfoDto.getSrcFile());
+                            }
                         }
+                        messageDto.setSrcFile(new ArrayList<>(fileDtoList.values()));
+                        srcFileChatResponse.setMessage(messageDto);
+                        sseCallback.responseCall.accept(srcFileChatResponse);
                     }
-                    messageDto.setSrcFile(new ArrayList<>(fileDtoList.values()));
-                    srcFileChatResponse.setMessage(messageDto);
-                    sseCallback.responseCall.accept(srcFileChatResponse);
                 }
                 chatContextBo.chat(request, sseCallback);
                 log.info("问: " + request.getMessages().get(request.getMessages().size() - 1).getContent());

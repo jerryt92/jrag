@@ -9,6 +9,8 @@ public class LlmProperties {
     public Boolean demo;
     @Value("${jrag.llm.llm-provider}")
     public String llmProvider;
+    @Value("${jrag.llm.use-rag}")
+    public Boolean useRag;
     @Value("${jrag.llm.use-tools}")
     public Boolean useTools;
     @Value("${jrag.llm.ollama.model-name}")

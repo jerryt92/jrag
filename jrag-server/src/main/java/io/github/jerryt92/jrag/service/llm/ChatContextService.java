@@ -1,6 +1,7 @@
 package io.github.jerryt92.jrag.service.llm;
 
 import io.github.jerryt92.jrag.config.BackendTaskConfig;
+import io.github.jerryt92.jrag.config.CommonProperties;
 import io.github.jerryt92.jrag.config.LlmProperties;
 import io.github.jerryt92.jrag.mapper.mgb.ChatContextItemMapper;
 import io.github.jerryt92.jrag.mapper.mgb.ChatContextRecordMapper;
@@ -50,13 +51,14 @@ public class ChatContextService {
     private final ConcurrentHashMap<String, ChatContextBo> chatContextMap = new ConcurrentHashMap<>();
     private final LoginService loginService;
     private final LlmProperties llmProperties;
+    private final CommonProperties commonProperties;
 
     public ChatContextService(ChatContextRecordMapper chatContextRecordMapper,
                               ChatContextItemMapper chatContextItemMapper,
                               FunctionCallingService functionCallingService,
                               @Qualifier(BackendTaskConfig.BACKEND_TASK_EXECUTOR) TaskExecutor topoConcurrentQueryExecutor,
                               ChatContextStorageService chatContextStorageService,
-                              LlmClient llmClient, LoginService loginService, LlmProperties llmProperties) {
+                              LlmClient llmClient, LoginService loginService, LlmProperties llmProperties, CommonProperties commonProperties) {
         this.chatContextRecordMapper = chatContextRecordMapper;
         this.chatContextItemMapper = chatContextItemMapper;
         this.functionCallingService = functionCallingService;
@@ -64,6 +66,7 @@ public class ChatContextService {
         this.llmClient = llmClient;
         this.loginService = loginService;
         this.llmProperties = llmProperties;
+        this.commonProperties = commonProperties;
     }
 
     @Scheduled(fixedRate = 1, timeUnit = TimeUnit.MINUTES)
@@ -82,12 +85,14 @@ public class ChatContextService {
      * @param chatContextBo
      */
     public void addChatContext(String contextId, ChatContextBo chatContextBo) {
-        ChatContextRecord chatContextRecord = chatContextRecordMapper.selectByPrimaryKey(contextId);
-        if (chatContextRecord != null) {
-            throw new RuntimeException("contextId '" + contextId + "' was already exists");
+        if (!commonProperties.publicMode) {
+            ChatContextRecord chatContextRecord = chatContextRecordMapper.selectByPrimaryKey(contextId);
+            if (chatContextRecord != null) {
+                throw new RuntimeException("contextId '" + contextId + "' was already exists");
+            }
+            ChatContextRecord insertChatContextRecord = Translator.translateToChatContextRecord(chatContextBo);
+            chatContextRecordMapper.insert(insertChatContextRecord);
         }
-        ChatContextRecord insertChatContextRecord = Translator.translateToChatContextRecord(chatContextBo);
-        chatContextRecordMapper.insert(insertChatContextRecord);
         chatContextMap.put(contextId, chatContextBo);
     }
 
@@ -118,30 +123,32 @@ public class ChatContextService {
     public ChatContextBo getChatContext(String contextId, String userId) {
         ChatContextBo chatContextBo = null;
         chatContextBo = chatContextMap.get(contextId);
-        if (chatContextBo == null) {
-            // 从数据库中加载对话上下文
-            ChatContextRecordExample chatContextRecordExample = new ChatContextRecordExample();
-            ChatContextRecordExample.Criteria criteria = chatContextRecordExample.createCriteria();
-            criteria.andContextIdEqualTo(contextId);
-            if (userId != null) {
-                criteria.andUserIdEqualTo(userId);
-            }
-            List<ChatContextRecord> chatContextRecords = chatContextRecordMapper.selectByExample(chatContextRecordExample);
-            if (!chatContextRecords.isEmpty()) {
-                ChatContextRecord chatContextRecord = chatContextRecords.get(0);
-                ChatContextItemExample chatContextItemExample = new ChatContextItemExample();
-                chatContextItemExample.createCriteria()
-                        .andContextIdEqualTo(contextId);
-                // 根据index升序排序
-                chatContextItemExample.setOrderByClause("message_index asc");
-                List<ChatContextItemWithBLOBs> chatContextItemList = chatContextItemMapper.selectByExampleWithBLOBs(chatContextItemExample);
-                List<ChatModel.Message> chatModelMessages = new ArrayList<>();
-                for (ChatContextItemWithBLOBs chatContextItem : chatContextItemList) {
-                    chatModelMessages.add(Translator.translateToChatMessage(chatContextItem));
+        if (!commonProperties.publicMode) {
+            if (chatContextBo == null) {
+                // 从数据库中加载对话上下文
+                ChatContextRecordExample chatContextRecordExample = new ChatContextRecordExample();
+                ChatContextRecordExample.Criteria criteria = chatContextRecordExample.createCriteria();
+                criteria.andContextIdEqualTo(contextId);
+                if (userId != null) {
+                    criteria.andUserIdEqualTo(userId);
                 }
-                chatContextBo = new ChatContextBo(contextId, chatContextRecord.getUserId(), llmClient, functionCallingService, chatContextStorageService, llmProperties);
-                chatContextMap.put(contextId, chatContextBo);
-                chatContextBo.setMessages(chatModelMessages);
+                List<ChatContextRecord> chatContextRecords = chatContextRecordMapper.selectByExample(chatContextRecordExample);
+                if (!chatContextRecords.isEmpty()) {
+                    ChatContextRecord chatContextRecord = chatContextRecords.get(0);
+                    ChatContextItemExample chatContextItemExample = new ChatContextItemExample();
+                    chatContextItemExample.createCriteria()
+                            .andContextIdEqualTo(contextId);
+                    // 根据index升序排序
+                    chatContextItemExample.setOrderByClause("message_index asc");
+                    List<ChatContextItemWithBLOBs> chatContextItemList = chatContextItemMapper.selectByExampleWithBLOBs(chatContextItemExample);
+                    List<ChatModel.Message> chatModelMessages = new ArrayList<>();
+                    for (ChatContextItemWithBLOBs chatContextItem : chatContextItemList) {
+                        chatModelMessages.add(Translator.translateToChatMessage(chatContextItem));
+                    }
+                    chatContextBo = new ChatContextBo(contextId, chatContextRecord.getUserId(), llmClient, functionCallingService, chatContextStorageService, llmProperties);
+                    chatContextMap.put(contextId, chatContextBo);
+                    chatContextBo.setMessages(chatModelMessages);
+                }
             }
         }
         return chatContextBo;
@@ -185,6 +192,9 @@ public class ChatContextService {
     }
 
     public HistoryContextList getHistoryContextList(Integer offset, Integer limit) {
+        if (commonProperties.publicMode) {
+            return new HistoryContextList().data(new ArrayList<>());
+        }
         SessionBo session = loginService.getSession();
         if (session == null) {
             return new HistoryContextList().data(new ArrayList<>());
@@ -210,22 +220,24 @@ public class ChatContextService {
     }
 
     public void addMessageFeedback(MessageFeedbackRequest messageFeedbackRequest) {
-        SessionBo session = loginService.getSession();
-        if (session != null) {
-            ChatContextBo chatContextBo = getChatContext(messageFeedbackRequest.getContextId(), session.getUserId());
-            if (chatContextBo != null) {
-                ChatContextItemKey chatContextItemKey = new ChatContextItemKey();
-                chatContextItemKey.setContextId(messageFeedbackRequest.getContextId());
-                chatContextItemKey.setMessageIndex(messageFeedbackRequest.getIndex());
-                ChatContextItemWithBLOBs chatContextItem = new ChatContextItemWithBLOBs();
-                chatContextItem.setContextId(messageFeedbackRequest.getContextId());
-                chatContextItem.setMessageIndex(messageFeedbackRequest.getIndex());
-                chatContextItem.setFeedback(messageFeedbackRequest.getFeedback().getValue());
-                chatContextItemMapper.updateByPrimaryKeySelective(chatContextItem);
-                List<ChatModel.Message> messages = chatContextBo.getMessages();
-                if (messageFeedbackRequest.getIndex() < messages.size()) {
-                    ChatModel.Message message = messages.get(messageFeedbackRequest.getIndex());
-                    message.setFeedback(ChatModel.Feedback.fromValue(messageFeedbackRequest.getFeedback().getValue()));
+        if (!commonProperties.publicMode) {
+            SessionBo session = loginService.getSession();
+            if (session != null) {
+                ChatContextBo chatContextBo = getChatContext(messageFeedbackRequest.getContextId(), session.getUserId());
+                if (chatContextBo != null) {
+                    ChatContextItemKey chatContextItemKey = new ChatContextItemKey();
+                    chatContextItemKey.setContextId(messageFeedbackRequest.getContextId());
+                    chatContextItemKey.setMessageIndex(messageFeedbackRequest.getIndex());
+                    ChatContextItemWithBLOBs chatContextItem = new ChatContextItemWithBLOBs();
+                    chatContextItem.setContextId(messageFeedbackRequest.getContextId());
+                    chatContextItem.setMessageIndex(messageFeedbackRequest.getIndex());
+                    chatContextItem.setFeedback(messageFeedbackRequest.getFeedback().getValue());
+                    chatContextItemMapper.updateByPrimaryKeySelective(chatContextItem);
+                    List<ChatModel.Message> messages = chatContextBo.getMessages();
+                    if (messageFeedbackRequest.getIndex() < messages.size()) {
+                        ChatModel.Message message = messages.get(messageFeedbackRequest.getIndex());
+                        message.setFeedback(ChatModel.Feedback.fromValue(messageFeedbackRequest.getFeedback().getValue()));
+                    }
                 }
             }
         }
