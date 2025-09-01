@@ -12,7 +12,7 @@ Jrag 是一个基于 Java Spring Boot 的 RAG（Retrieval-Augmented Generation�
 
 ## 演示
 
-[数据通信百科助手 - 基于Jrag](https://jerryt92.github.io/data-communication-encyclopedia)
+[数据通信百科助手](https://jerryt92.github.io/data-communication-encyclopedia)
 
 **数据通信百科助手**，基于Jrag，可以回答各种数据通信相关的问题。
 

@@ -12,7 +12,7 @@ Jrag is a RAG (Retrieval-Augmented Generation) and MCP tool integration platform
 
 ## Demo
 
-[Data Communication Encyclopedia Assistant - Based on Jrag](https://jerryt92.github.io/data-communication-encyclopedia)
+[Data Communication Encyclopedia Assistant](https://jerryt92.github.io/data-communication-encyclopedia)
 
 **Data Communication Encyclopedia Assistant**, based on Jrag, can answer various data communication related questions.
 
