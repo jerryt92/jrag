@@ -1,6 +1,7 @@
 <div>
   简体中文 | <a title="English" href="./README_en.md">English</a>
 </div>
+<br/>
 
 [![GitHub](https://img.shields.io/badge/GitHub-Jrag-blue?logo=github)](https://github.com/jerryt92/jrag)
 
