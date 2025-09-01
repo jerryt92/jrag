@@ -52,7 +52,7 @@ jrag@2025
 
 ```shell
 rm -rf jrag-starter/src/main/resources/dist
-git clone -b dist https://github.com/jerryt92/jrag-ui.git jrag-starter/src/main/resources/dist
+git clone -b dist-dc-encyclopedia https://github.com/jerryt92/jrag-ui.git jrag-starter/src/main/resources/dist
 ```
 
 [jrag-ui](https://github.com/jerryt92/jrag-ui)
