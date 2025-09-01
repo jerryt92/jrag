@@ -15,12 +15,12 @@ jrag:
     captcha:
       expire-seconds: 300
   # 是否为公共模式（免登录，历史回话存在于浏览器）
-  public-mode: false
+  public-mode: true
   llm:
     demo: false
     temperature: 0
     llm-provider: open-ai
-    use-rag: true
+    use-rag: false
     use-tools: true
     ollama:
       model-name: qwen2.5:14b

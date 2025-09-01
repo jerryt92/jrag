@@ -31,7 +31,7 @@ public class DataCommunicationEncyclopedia extends ToolInterface {
                                 new FunctionCallingModel.Tool.Parameter()
                                         .setName("word")
                                         .setType("string")
-                                        .setDescription("数据通信领域的名词")
+                                        .setDescription("数据通信领域的名词（仅输入词本身，不要包含多余的信息，eg：用户提问“什么是WLAN？”，那么word的值就是“WLAN”）")
                                         .setRequired(true)
                         )
                 );
