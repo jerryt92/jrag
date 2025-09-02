@@ -6,10 +6,13 @@ import io.github.jerryt92.jrag.service.llm.tools.ToolInterface;
 import io.modelcontextprotocol.client.McpClient;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.client.transport.HttpClientSseClientTransport;
+import io.modelcontextprotocol.client.transport.StdioClientTransport;
+import io.modelcontextprotocol.spec.McpClientTransport;
 import io.modelcontextprotocol.spec.McpSchema;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.mcp.client.autoconfigure.properties.McpSseClientProperties;
+import org.springframework.ai.mcp.client.autoconfigure.properties.McpStdioClientProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -21,14 +24,16 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 @Slf4j
 @Service
 public class McpService {
-    public Map<String, McpSseClientProperties.SseParameters> mcpServerParameters = new HashMap<>();
-    public Map<McpSyncClient, String> mcpClient2name = new HashMap<>();
+    public Map<String, McpSseClientProperties.SseParameters> mcpSseServerParameters = new HashMap<>();
+    public Map<String, McpStdioClientProperties.Parameters> mcpStdioServerParameters = new HashMap<>();
+    public Map<String, McpSyncClient> mcpName2Client = new HashMap<>();
     public Map<String, Set<String>> mcpClient2tools = new HashMap<>();
     private final FunctionCallingService functionCallingService;
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(15L);
@@ -43,6 +48,7 @@ public class McpService {
     }
 
     private void loadMcpServers() {
+        Set<String> mcpServerNames = null;
         // 读取 mcp.json
         try (InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("mcp.json")) {
             if (inputStream != null) {
@@ -51,7 +57,7 @@ public class McpService {
                 if (mcpJson != null) {
                     JSONObject mcpServers = mcpJson.getJSONObject("mcpServers");
                     if (mcpServers != null) {
-                        Set<String> mcpServerNames = mcpServers.keySet();
+                        mcpServerNames = mcpServers.keySet();
                         for (String mcpServerName : mcpServerNames) {
                             JSONObject mcpServer = mcpServers.getJSONObject(mcpServerName);
                             if (mcpServer != null) {
@@ -59,36 +65,54 @@ public class McpService {
                                     try {
                                         URI uri = new URI(mcpServer.getString("url"));
                                         String baseUrl = uri.getScheme() + "://" + uri.getHost();
-                                        mcpServerParameters.put(
+                                        mcpSseServerParameters.put(
                                                 mcpServerName,
                                                 new McpSseClientProperties.SseParameters(baseUrl, uri.getPath())
                                         );
                                     } catch (URISyntaxException e) {
                                         log.error("", e);
                                     }
+                                } else if ("streamable_http".equals(mcpServer.getString("type"))) {
+                                    log.error("Streamable http is not supported yet, waiting for Spring AI release, mcp server name: {}", mcpServerName);
                                 } else {
-                                    log.error("Unsupported mcp server type: {}, mcp server name: {}", mcpServer.getString("type"), mcpServerName);
+                                    String command = mcpServer.getString("command");
+                                    List<String> args = mcpServer.getList("args", String.class);
+                                    Map<String, String> env = null;
+                                    JSONObject envJsonObject = mcpServer.getJSONObject("env");
+                                    if (envJsonObject != null && !envJsonObject.isEmpty()) {
+                                        env = new HashMap<>();
+                                        for (Map.Entry<String, Object> stringObjectEntry : envJsonObject.entrySet()) {
+                                            env.put(stringObjectEntry.getKey(), String.valueOf(stringObjectEntry.getValue()));
+                                        }
+                                    }
+                                    mcpStdioServerParameters.put(
+                                            mcpServerName,
+                                            new McpStdioClientProperties.Parameters(command, args, env)
+                                    );
                                 }
                             }
                         }
+                        mcpServerNames = new HashSet<>();
+                        mcpServerNames.addAll(mcpSseServerParameters.keySet());
+                        mcpServerNames.addAll(mcpStdioServerParameters.keySet());
                     }
                 }
             }
         } catch (IOException e) {
             log.error("", e);
         }
-        if (!mcpServerParameters.isEmpty()) {
-            // 初始化 mcp client
-            int mcpServerCount = mcpServerParameters.size();
-            int mcpTollCount = 0;
-            for (Map.Entry<String, McpSseClientProperties.SseParameters> mcpEntry : mcpServerParameters.entrySet()) {
-                mcpTollCount += registerMcpTools(mcpEntry.getKey(), mcpEntry.getValue()).size();
+        int mcpTollCount = 0;
+        int mcpServerCount = 0;
+        if (!CollectionUtils.isEmpty(mcpServerNames)) {
+            mcpServerCount += mcpServerNames.size();
+            for (String mcpServerName : mcpServerNames) {
+                mcpTollCount += registerMcpTools(mcpServerName).size();
             }
-            log.info("Loaded {} mcp tools form {} mcp servers", mcpTollCount, mcpServerCount);
         }
+        log.info("Loaded {} mcp tools form {} mcp servers", mcpTollCount, mcpServerCount);
     }
 
-    public Set<String> registerMcpTools(String mcpServerName, McpSseClientProperties.SseParameters sseParameters) {
+    public Set<String> registerMcpTools(String mcpServerName) {
         try {
             Set<String> removedTools = mcpClient2tools.remove(mcpServerName);
             if (!CollectionUtils.isEmpty(removedTools)) {
@@ -96,11 +120,18 @@ public class McpService {
                     functionCallingService.getTools().remove(removedTool);
                 }
             }
-            HttpClientSseClientTransport httpClientSseClientTransport = HttpClientSseClientTransport
-                    .builder(sseParameters.url())
-                    .sseEndpoint(sseParameters.sseEndpoint())
-                    .build();
-            McpSyncClient mcpSyncClient = McpClient.sync(httpClientSseClientTransport)
+            McpClientTransport mcpClientTransport = null;
+            McpStdioClientProperties.Parameters parameters = mcpStdioServerParameters.get(mcpServerName);
+            McpSseClientProperties.SseParameters sseParameters = mcpSseServerParameters.get(mcpServerName);
+            if (parameters != null) {
+                mcpClientTransport = new StdioClientTransport(parameters.toServerParameters());
+            } else if (sseParameters != null) {
+                mcpClientTransport = HttpClientSseClientTransport
+                        .builder(sseParameters.url())
+                        .sseEndpoint(sseParameters.sseEndpoint())
+                        .build();
+            }
+            McpSyncClient mcpSyncClient = McpClient.sync(mcpClientTransport)
                     .requestTimeout(REQUEST_TIMEOUT)
                     .capabilities(McpSchema.ClientCapabilities.builder()
                             .roots(true)
@@ -115,20 +146,21 @@ public class McpService {
                 McpToolInfImpl toolInf;
                 ToolInterface tool = functionCallingService.getTools().get(mcpTool.name());
                 if (tool != null) {
-                    if (!(tool instanceof McpToolInfImpl existedMcpTool)) {
+                    if (tool instanceof McpToolInfImpl existedMcpTool) {
+                        // 已存在的工具是MCP工具
+                        if (!existedMcpTool.getMcpSyncClient().equals(mcpSyncClient)) {
+                            throw new RuntimeException(
+                                    String.format("Duplicate mcp tool name: %s from mcp server: %s with another mcp server: %s",
+                                            mcpTool.name(), mcpSyncClient.getServerInfo().name(), existedMcpTool.getMcpSyncClient().getServerInfo().name()
+                                    )
+                            );
+                        }
+                    } else {
                         throw new RuntimeException(
                                 String.format("Duplicate mcp tool name: %s with function calling tool ,from mcp server: %s",
                                         mcpTool.name(), mcpSyncClient.getServerInfo().name()
                                 )
                         );
-                    } else if (!mcpServerName.equals(mcpClient2name.get(existedMcpTool.getMcpSyncClient()))) {
-                        throw new RuntimeException(
-                                String.format("Duplicate mcp tool name: %s from mcp server: %s with another mcp server: %s",
-                                        mcpTool.name(), mcpSyncClient.getServerInfo().name(), existedMcpTool.getMcpSyncClient().getServerInfo().name()
-                                )
-                        );
-                    } else {
-                        functionCallingService.getTools().remove(mcpTool.name());
                     }
                 } else {
                     toolInf = new McpToolInfImpl(mcpSyncClient, mcpTool);
@@ -136,7 +168,7 @@ public class McpService {
                 }
                 tools.add(mcpTool.name());
             }
-            mcpClient2name.put(mcpSyncClient, mcpServerName);
+            mcpName2Client.put(mcpServerName, mcpSyncClient);
             mcpClient2tools.put(mcpServerName, tools);
             return tools;
         } catch (Exception e) {

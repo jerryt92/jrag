@@ -2,11 +2,11 @@ package io.github.jerryt92.jrag.service.llm.mcp;
 
 import io.modelcontextprotocol.client.McpSyncClient;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.mcp.client.autoconfigure.properties.McpSseClientProperties;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -23,13 +23,17 @@ public class McpPingService {
     @Scheduled(fixedRate = 15, timeUnit = TimeUnit.SECONDS)
     private void pingMcpServer() {
         try {
-            Set<McpSyncClient> mcpSyncClients = mcpService.mcpClient2name.keySet();
-            for (McpSyncClient mcpSyncClient : mcpSyncClients) {
-                try {
-                    mcpSyncClient.ping();
-                } catch (Exception e) {
-                    log.error("MCP server {} ping failed", mcpSyncClient.getServerInfo());
-                    reconnectMcpServer(mcpSyncClient);
+            for (Map.Entry<String, McpSyncClient> stringMcpSyncClientEntry : mcpService.mcpName2Client.entrySet()) {
+                McpSyncClient mcpSyncClient = stringMcpSyncClientEntry.getValue();
+                String mcpServerName = stringMcpSyncClientEntry.getKey();
+                if (!mcpService.mcpStdioServerParameters.containsKey(mcpServerName)) {
+                    // Stdio类型的MCP Server无需Ping
+                    try {
+                        mcpSyncClient.ping();
+                    } catch (Exception e) {
+                        log.error("MCP server {} ping failed", mcpSyncClient.getServerInfo());
+                        reconnectMcpServer(mcpServerName);
+                    }
                 }
             }
         } catch (Throwable e) {
@@ -37,11 +41,10 @@ public class McpPingService {
         }
     }
 
-    private void reconnectMcpServer(McpSyncClient oldMcpSyncClient) {
+    private void reconnectMcpServer(String mcpServerName) {
+        McpSyncClient oldMcpSyncClient = mcpService.mcpName2Client.get(mcpServerName);
         try {
-            String mcpServerName = mcpService.mcpClient2name.remove(oldMcpSyncClient);
-            McpSseClientProperties.SseParameters sseParameters = mcpService.mcpServerParameters.get(mcpServerName);
-            Set<String> tools = mcpService.registerMcpTools(mcpServerName, sseParameters);
+            Set<String> tools = mcpService.registerMcpTools(mcpServerName);
             log.info("MCP server {} reconnect success, has {} tools", mcpServerName, tools.size());
         } catch (Throwable e) {
             log.error("MCP server {} reconnect failed", oldMcpSyncClient.getServerInfo());
