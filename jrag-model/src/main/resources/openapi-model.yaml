@@ -244,6 +244,14 @@ components:
           $ref: '#/components/schemas/MessageDto'
         done:
           type: boolean
+          default: false
+        error:
+          type: boolean
+          default: false
+        errorCode:
+          type: string
+        errorMessage:
+          type: string
     HistoryContextList:
       type: object
       properties:

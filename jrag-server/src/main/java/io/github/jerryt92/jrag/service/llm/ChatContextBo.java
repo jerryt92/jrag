@@ -258,7 +258,11 @@ public class ChatContextBo {
     }
 
     private void onError(Throwable t, SseCallback sseCallback) {
-        log.error("", t);
+        if (t instanceof org.springframework.web.reactive.function.client.WebClientResponseException ex) {
+            log.error("LLMClient api error, errorCode: {}, errorMessage: {}", ex.getStatusCode().value(), ex.getResponseBodyAsString());
+        } else {
+            log.error("", t);
+        }
         functionCallingFutures.forEach((future, future1) -> future.cancel(true));
         isWaitingFunction = false;
         sseCallback.errorCall.accept(t);

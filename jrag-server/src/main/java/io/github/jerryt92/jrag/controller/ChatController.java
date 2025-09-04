@@ -66,7 +66,20 @@ public class ChatController extends AbstractWebSocketHandler implements ChatApi 
                     }
                 },
                 sseEmitter::complete,
-                sseEmitter::completeWithError,
+                t -> {
+                    try {
+                        ChatResponseDto errorResponse = new ChatResponseDto().done(true).error(true);
+                        if (t instanceof org.springframework.web.reactive.function.client.WebClientResponseException ex) {
+                            errorResponse.setErrorCode(String.valueOf(ex.getStatusCode().value()));
+                            errorResponse.setErrorMessage(ex.getResponseBodyAsString());
+                        } else {
+                            errorResponse.setErrorMessage(t.getMessage());
+                        }
+                        sseEmitter.send(SseEmitter.event().name("error").data(errorResponse));
+                    } catch (IOException e) {
+                        sseEmitter.completeWithError(e);
+                    }
+                },
                 sseEmitter::complete
         );
         sseEmitter.onCompletion(() -> sseCallback.onSseCompletion.run());
