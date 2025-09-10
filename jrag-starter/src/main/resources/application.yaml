@@ -10,6 +10,11 @@ spring:
   web:
     resources:
       static-locations: classpath:/dist/
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10GB # 文件最大上传大小
+      max-request-size: 10GB # 请求最大上传大小
 jrag:
   security:
     captcha:
@@ -23,31 +28,20 @@ jrag:
     use-rag: true
     use-tools: true
     ollama:
-#      model-name: qwen3:14b
-#      base-url: http://127.0.0.1:11434
-#      # 模型驻留时间
-#      keep_alive_seconds: 3600
-#      context-length: 32768
-
-      model-name: qwen3:14b-q8_0
-      base-url: http://172.16.8.107:11434
+      model-name: qwen3:14b
+      base-url: http://127.0.0.1:11434
       # 模型驻留时间
       keep_alive_seconds: 3600
       context-length: 32768
     open-ai:
-      model-name: qwen3-14b-mlx
-      base-url: http://127.0.0.1:1234
+      model-name: Qwen/Qwen3-235B-A22B
+      base-url: https://api-inference.modelscope.cn
       completions-path: /v1/chat/completions
       key:
-#      model-name: 4.0Ultra
-#      base-url: https://spark-api-open.xf-yun.com
-#      completions-path: /v1/chat/completions
-#      key: RSvigWgMWgarwaTMNuBn:jMbCLBVJezEiHSqFCgpR
-#      use-tools: true
   embedding:
     # 嵌入向量维度
     dimension: 768
-    embedding-provider: open-ai
+    embedding-provider: ollama
     ollama:
       model-name: nomic-embed-text:latest
       base-url: http://127.0.0.1:11434
@@ -71,7 +65,7 @@ jrag:
       password:
       key-prefix: jrag
   file:
-    upload-path: classpath:/file
-    static-path: classpath:/static-file
+    upload-path: ${user.home}/jrag/upload/file
+    static-path: ${user.home}/jrag/upload/static-file
   rag:
     md-location:

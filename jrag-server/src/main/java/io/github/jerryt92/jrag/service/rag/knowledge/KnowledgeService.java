@@ -73,11 +73,11 @@ public class KnowledgeService {
                     .add(embeddingsItemPo);
         }
         // 获取所有file
-        List<Integer> fileId = new ArrayList<>(new HashSet<>(textChunkPos.stream().map(TextChunkPo::getSrcFileId).collect(Collectors.toList())));
+        List<String> fileId = new ArrayList<>(new HashSet<>(textChunkPos.stream().map(TextChunkPo::getSrcFileId).collect(Collectors.toList())));
         FilePoExample filePoExample = new FilePoExample();
         filePoExample.createCriteria().andIdIn(fileId);
         List<FilePo> filePos = filePoMapper.selectByExample(filePoExample);
-        Map<Integer, FilePo> fileIdToFilePo = new HashMap<>();
+        Map<String, FilePo> fileIdToFilePo = new HashMap<>();
         for (FilePo filePo : filePos) {
             fileIdToFilePo.put(filePo.getId(), filePo);
         }

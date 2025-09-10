@@ -22,9 +22,10 @@ public class LoginInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         Cookie[] cookies = request.getCookies();
+        int port = request.getServerPort();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
-                if (cookie.getName().equals("SESSION")) {
+                if (cookie.getName().equals("SESSION-" + port)) {
                     if (cookie.getValue() != null) {
                         if (loginService.validateSession(cookie.getValue())) {
                             loginService.sessionThreadLocal.set(cookie.getValue());

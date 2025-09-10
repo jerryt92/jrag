@@ -18,7 +18,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -220,7 +219,7 @@ public final class Translator {
         messageDto.setFeedback(MessageDto.FeedbackEnum.fromValue(message.getFeedback().getValue()));
         messageDto.setContent(message.getContent());
         if (!CollectionUtils.isEmpty(message.getRagInfos())) {
-            Map<Integer, FileDto> fileDtoMap = new HashMap<>();
+            Map<String, FileDto> fileDtoMap = new HashMap<>();
             for (RagInfoDto ragInfoDto : message.getRagInfos()) {
                 if (ragInfoDto.getSrcFile() != null) {
                     fileDtoMap.put(ragInfoDto.getSrcFile().getId(), ragInfoDto.getSrcFile());

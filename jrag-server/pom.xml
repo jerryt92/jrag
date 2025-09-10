@@ -130,6 +130,11 @@
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-autoconfigure-mcp-client</artifactId>
         </dependency>
+        <!-- Apache Commons Compress for tar, gzip -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+        </dependency>
     </dependencies>
     <profiles>
         <profile>

@@ -367,52 +367,62 @@ public class TextChunkPoExample {
             return (Criteria) this;
         }
 
-        public Criteria andSrcFileIdEqualTo(Integer value) {
+        public Criteria andSrcFileIdEqualTo(String value) {
             addCriterion("src_file_id =", value, "srcFileId");
             return (Criteria) this;
         }
 
-        public Criteria andSrcFileIdNotEqualTo(Integer value) {
+        public Criteria andSrcFileIdNotEqualTo(String value) {
             addCriterion("src_file_id <>", value, "srcFileId");
             return (Criteria) this;
         }
 
-        public Criteria andSrcFileIdGreaterThan(Integer value) {
+        public Criteria andSrcFileIdGreaterThan(String value) {
             addCriterion("src_file_id >", value, "srcFileId");
             return (Criteria) this;
         }
 
-        public Criteria andSrcFileIdGreaterThanOrEqualTo(Integer value) {
+        public Criteria andSrcFileIdGreaterThanOrEqualTo(String value) {
             addCriterion("src_file_id >=", value, "srcFileId");
             return (Criteria) this;
         }
 
-        public Criteria andSrcFileIdLessThan(Integer value) {
+        public Criteria andSrcFileIdLessThan(String value) {
             addCriterion("src_file_id <", value, "srcFileId");
             return (Criteria) this;
         }
 
-        public Criteria andSrcFileIdLessThanOrEqualTo(Integer value) {
+        public Criteria andSrcFileIdLessThanOrEqualTo(String value) {
             addCriterion("src_file_id <=", value, "srcFileId");
             return (Criteria) this;
         }
 
-        public Criteria andSrcFileIdIn(List<Integer> values) {
+        public Criteria andSrcFileIdLike(String value) {
+            addCriterion("src_file_id like", value, "srcFileId");
+            return (Criteria) this;
+        }
+
+        public Criteria andSrcFileIdNotLike(String value) {
+            addCriterion("src_file_id not like", value, "srcFileId");
+            return (Criteria) this;
+        }
+
+        public Criteria andSrcFileIdIn(List<String> values) {
             addCriterion("src_file_id in", values, "srcFileId");
             return (Criteria) this;
         }
 
-        public Criteria andSrcFileIdNotIn(List<Integer> values) {
+        public Criteria andSrcFileIdNotIn(List<String> values) {
             addCriterion("src_file_id not in", values, "srcFileId");
             return (Criteria) this;
         }
 
-        public Criteria andSrcFileIdBetween(Integer value1, Integer value2) {
+        public Criteria andSrcFileIdBetween(String value1, String value2) {
             addCriterion("src_file_id between", value1, value2, "srcFileId");
             return (Criteria) this;
         }
 
-        public Criteria andSrcFileIdNotBetween(Integer value1, Integer value2) {
+        public Criteria andSrcFileIdNotBetween(String value1, String value2) {
             addCriterion("src_file_id not between", value1, value2, "srcFileId");
             return (Criteria) this;
         }
