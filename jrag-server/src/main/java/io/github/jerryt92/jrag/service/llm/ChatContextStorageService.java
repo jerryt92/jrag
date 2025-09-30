@@ -34,18 +34,17 @@ public class ChatContextStorageService {
     @Transactional(rollbackFor = Throwable.class)
     public void storageChatContextToDb(ChatContextBo chatContextBo, ConcurrentHashMap<String, ChatContextBo> chatContextMap) {
         if (!commonProperties.publicMode) {
-            // 如果5分钟没有请求，则存储对话上下文到数据库
             List<ChatContextItemWithBLOBs> insertChatContextItemList = new ArrayList<>();
             List<ChatContextItemWithBLOBs> chatContextItemWithBLOBs = Translator.translateToChatContextItemWithBLOBs(chatContextBo);
             ChatContextItemExample chatContextItemExample = new ChatContextItemExample();
             chatContextItemExample.createCriteria().andContextIdEqualTo(chatContextBo.getContextId());
             // 查询数据库中已有的对话上下文
-            HashSet<Integer> existMessageIndexSet = new HashSet<>();
+            HashSet<String> existMessageIndexAndRoleSet = new HashSet<>();
             for (ChatContextItem chatContextItem : chatContextItemMapper.selectByExample(chatContextItemExample)) {
-                existMessageIndexSet.add(chatContextItem.getMessageIndex());
+                existMessageIndexAndRoleSet.add("" + chatContextItem.getMessageIndex() + chatContextItem.getChatRole());
             }
             for (ChatContextItemWithBLOBs insertChatContextItem : chatContextItemWithBLOBs) {
-                if (!existMessageIndexSet.contains(insertChatContextItem.getMessageIndex())) {
+                if (!existMessageIndexAndRoleSet.contains("" + insertChatContextItem.getMessageIndex() + insertChatContextItem.getChatRole())) {
                     insertChatContextItemList.add(insertChatContextItem);
                 }
             }

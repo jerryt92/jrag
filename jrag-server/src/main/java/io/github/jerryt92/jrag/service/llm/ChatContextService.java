@@ -134,10 +134,12 @@ public class ChatContextService {
                 }
                 List<ChatContextRecord> chatContextRecords = chatContextRecordMapper.selectByExample(chatContextRecordExample);
                 if (!chatContextRecords.isEmpty()) {
-                    ChatContextRecord chatContextRecord = chatContextRecords.get(0);
+                    ChatContextRecord chatContextRecord = chatContextRecords.getFirst();
                     ChatContextItemExample chatContextItemExample = new ChatContextItemExample();
-                    chatContextItemExample.createCriteria()
-                            .andContextIdEqualTo(contextId);
+                    ChatContextItemExample.Criteria chatContextItemExampleCriteria = chatContextItemExample.createCriteria();
+                    chatContextItemExampleCriteria.andContextIdEqualTo(contextId);
+                    // 排除系统提示词的消息
+                    chatContextItemExampleCriteria.andChatRoleNotEqualTo(0);
                     // 根据index升序排序
                     chatContextItemExample.setOrderByClause("message_index asc");
                     List<ChatContextItemWithBLOBs> chatContextItemList = chatContextItemMapper.selectByExampleWithBLOBs(chatContextItemExample);
@@ -214,6 +216,7 @@ public class ChatContextService {
     private void checkChatContextToDb() {
         for (ChatContextBo chatContextBo : chatContextMap.values()) {
             if (System.currentTimeMillis() - chatContextBo.getLastRequestTime() > 1000 * 60 * 5) {
+                // 如果5分钟没有请求，则存储对话上下文到数据库
                 chatContextStorageService.storageChatContextToDb(chatContextBo, chatContextMap);
             }
         }

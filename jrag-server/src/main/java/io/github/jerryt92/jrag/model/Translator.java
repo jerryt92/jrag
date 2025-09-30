@@ -298,20 +298,25 @@ public final class Translator {
 
     public static List<ChatContextItemWithBLOBs> translateToChatContextItemWithBLOBs(ChatContextBo chatContextBo) {
         List<ChatContextItemWithBLOBs> chatContextItemWithBLOBs = new ArrayList<>();
+        int msgIndex = 0;
+        int systemPromptIndex = -1;
         for (int i = 0; i < chatContextBo.getMessages().size(); i++) {
             ChatModel.Message message = chatContextBo.getMessages().get(i);
             ChatContextItemWithBLOBs chatContextItem = new ChatContextItemWithBLOBs();
             chatContextItem.setContextId(chatContextBo.getContextId());
-            chatContextItem.setMessageIndex(i);
             switch (message.getRole()) {
                 case SYSTEM:
                     chatContextItem.setChatRole(0);
+                    // 系统提示词使用负数索引，不与可见消息冲突
+                    chatContextItem.setMessageIndex(systemPromptIndex--);
                     break;
                 case USER:
                     chatContextItem.setChatRole(1);
+                    chatContextItem.setMessageIndex(msgIndex++);
                     break;
                 case ASSISTANT:
                     chatContextItem.setChatRole(2);
+                    chatContextItem.setMessageIndex(msgIndex++);
                     break;
             }
             chatContextItem.setContent(message.getContent());
