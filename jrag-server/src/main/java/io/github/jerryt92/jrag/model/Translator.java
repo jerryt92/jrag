@@ -307,7 +307,7 @@ public final class Translator {
                 case SYSTEM:
                     chatContextItem.setChatRole(0);
                     // 系统提示词使用负数索引，不与可见消息冲突
-                    chatContextItem.setMessageIndex(-msgIndex);
+                    chatContextItem.setMessageIndex(-(msgIndex + 1));
                     break;
                 case USER:
                     chatContextItem.setChatRole(1);
