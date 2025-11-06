@@ -98,7 +98,7 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
           description: 文件ID
         fullFileName:
           type: string
@@ -151,7 +151,7 @@ components:
           type: string
           description: 文件名
         fileId:
-          type: integer
+          type: string
           description: 文件ID
     KnowledgeAddDto:
       type: object
@@ -171,7 +171,7 @@ components:
           type: string
           description: 描述
         fileId:
-          type: integer
+          type: string
           description: 文件ID
         fileLocation:
           type: string

@@ -66,7 +66,7 @@ public class Retriever {
             TextChunkPoExample textChunkPoExample = new TextChunkPoExample();
             textChunkPoExample.createCriteria().andIdIn(new ArrayList<>(textChunkIds));
             Map<String, TextChunkPo> textChunkMap = new HashMap<>();
-            List<Integer> srcFileIds = new ArrayList<>();
+            List<String> srcFileIds = new ArrayList<>();
             List<TextChunkPo> textChunkPoList = textChunkPoMapper.selectByExampleWithBLOBs(textChunkPoExample);
             int totalChar = 0;
             for (TextChunkPo textChunkPo : textChunkPoList) {
@@ -86,7 +86,7 @@ public class Retriever {
                 ragData.put("content", textChunkMap.get(embeddingsQueryItem.getTextChunkId()).getTextChunk());
                 ragDataArray.add(ragData);
             }
-            Map<Integer, FilePo> fileMap = new HashMap<>();
+            Map<String, FilePo> fileMap = new HashMap<>();
             if (!srcFileIds.isEmpty()) {
                 FilePoExample filePoExample = new FilePoExample();
                 filePoExample.createCriteria().andIdIn(srcFileIds);

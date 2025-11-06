@@ -10,6 +10,11 @@ spring:
   web:
     resources:
       static-locations: classpath:/dist/
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10GB # 文件最大上传大小
+      max-request-size: 10GB # 请求最大上传大小
 jrag:
   security:
     captcha:
@@ -71,7 +76,7 @@ jrag:
       password:
       key-prefix: jrag
   file:
-    upload-path: classpath:/file
-    static-path: classpath:/static-file
+    upload-path: ${user.home}/jrag/upload/file
+    static-path: ${user.home}/jrag/upload/static-file
   rag:
     md-location:

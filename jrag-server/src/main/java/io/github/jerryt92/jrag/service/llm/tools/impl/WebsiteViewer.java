@@ -57,6 +57,9 @@ public class WebsiteViewer extends ToolInterface {
             ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
             // 检查是否重定向
             if (responseEntity.getStatusCode().is3xxRedirection()) {
+                if (responseEntity.getHeaders().getLocation() == null) {
+                    return "";
+                }
                 String redirectUrl = responseEntity.getHeaders().getLocation().toString();
                 responseEntity = restTemplate.exchange(redirectUrl, HttpMethod.GET, entity, String.class);
             }
@@ -68,7 +71,7 @@ public class WebsiteViewer extends ToolInterface {
             log.info("webResult : " + JSONObject.toJSONString(webResult));
             return JSONObject.toJSONString(webResult);
         } catch (Exception e) {
-            return null;
+            return "";
         }
     }
 

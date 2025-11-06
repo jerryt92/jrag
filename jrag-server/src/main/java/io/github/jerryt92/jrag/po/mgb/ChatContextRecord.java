@@ -143,7 +143,7 @@ public class ChatContextRecord {
      * @mbg.generated
      */
     public enum Column {
-        contextId("context_id", "contextId", "VARCHAR", false),
+        contextId("context_id", "contextId", "CHAR", false),
         title("title", "title", "VARCHAR", false),
         userId("user_id", "userId", "VARCHAR", false),
         updateTime("update_time", "updateTime", "BIGINT", false);

@@ -108,7 +108,7 @@ public class FileService {
     }
 
     @Transactional(rollbackFor = Throwable.class)
-    public FileBo putFile(Integer id, MultipartFile multipartFile) {
+    public FileBo putFile(String id, MultipartFile multipartFile) {
         try {
             if (!multipartFile.isEmpty()) {
                 // 校验MD5和SHA-1
@@ -169,7 +169,7 @@ public class FileService {
     }
 
     @Transactional(rollbackFor = Throwable.class)
-    public void deleteFile(List<Integer> fileId) {
+    public void deleteFile(List<String> fileId) {
         FilePoExample filePoExample = new FilePoExample();
         filePoExample.createCriteria().andIdIn(fileId);
         List<FilePo> filePos = filePoMapper.selectByExample(filePoExample);
@@ -190,7 +190,7 @@ public class FileService {
         }
     }
 
-    public Resource getFile(Integer fileId) {
+    public Resource getFile(String fileId) {
         FilePoExample example = new FilePoExample();
         example.createCriteria().andIdEqualTo(fileId);
         List<FilePo> dbFiles = filePoMapper.selectByExample(example);

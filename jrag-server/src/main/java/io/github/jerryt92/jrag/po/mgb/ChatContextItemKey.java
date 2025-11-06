@@ -77,7 +77,7 @@ public class ChatContextItemKey {
      * @mbg.generated
      */
     public enum Column {
-        contextId("context_id", "contextId", "VARCHAR", false),
+        contextId("context_id", "contextId", "CHAR", false),
         messageIndex("message_index", "messageIndex", "INTEGER", false),
         chatRole("chat_role", "chatRole", "INTEGER", false),
         feedback("feedback", "feedback", "INTEGER", false),

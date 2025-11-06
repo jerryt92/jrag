@@ -20,7 +20,7 @@ public class TextChunkPo {
      *
      * @mbg.generated
      */
-    private Integer srcFileId;
+    private String srcFileId;
 
     /**
      *
@@ -90,7 +90,7 @@ public class TextChunkPo {
      *
      * @mbg.generated
      */
-    public Integer getSrcFileId() {
+    public String getSrcFileId() {
         return srcFileId;
     }
 
@@ -102,8 +102,8 @@ public class TextChunkPo {
      *
      * @mbg.generated
      */
-    public void setSrcFileId(Integer srcFileId) {
-        this.srcFileId = srcFileId;
+    public void setSrcFileId(String srcFileId) {
+        this.srcFileId = srcFileId == null ? null : srcFileId.trim();
     }
 
     /**
@@ -210,7 +210,7 @@ public class TextChunkPo {
      */
     public enum Column {
         id("id", "id", "CHAR", false),
-        srcFileId("src_file_id", "srcFileId", "INTEGER", false),
+        srcFileId("src_file_id", "srcFileId", "CHAR", false),
         description("description", "description", "VARCHAR", false),
         createTime("create_time", "createTime", "BIGINT", false),
         updateTime("update_time", "updateTime", "BIGINT", false),

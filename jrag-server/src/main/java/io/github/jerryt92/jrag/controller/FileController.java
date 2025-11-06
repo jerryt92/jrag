@@ -42,7 +42,7 @@ public class FileController implements FileApi {
     }
 
     @Override
-    public ResponseEntity<FileDto> putFile(Integer id, MultipartFile file) {
+    public ResponseEntity<FileDto> putFile(String id, MultipartFile file) {
         // 如果超过1G就不允许上传
         if (file.getSize() > 1024 * 1024 * 1024) {
             throw new RuntimeException(ErrorConstants.FILE_UPLOAD_SIZE_LIMIT);
@@ -55,13 +55,13 @@ public class FileController implements FileApi {
     }
 
     @Override
-    public ResponseEntity<Void> deleteFile(List<Integer> fileId) {
+    public ResponseEntity<Void> deleteFile(List<String> fileId) {
         fileService.deleteFile(fileId);
         return ResponseEntity.ok().build();
     }
 
     @Override
-    public ResponseEntity<Resource> getFile(Integer fileId) {
+    public ResponseEntity<Resource> getFile(String fileId) {
         Resource resource = fileService.getFile(fileId);
         if (resource == null) {
             return ResponseEntity.notFound().build();

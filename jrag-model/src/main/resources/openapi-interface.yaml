@@ -189,7 +189,7 @@ paths:
               type: object
               properties:
                 id:
-                  type: integer
+                  type: string
                   description: 文件ID
                 file:
                   type: string
@@ -220,7 +220,7 @@ paths:
           schema:
             type: array
             items:
-              type: integer
+              type: string
               description: 文件ID
       responses:
         "200":
@@ -233,7 +233,7 @@ paths:
         - in: path
           name: file-id
           schema:
-            type: integer
+            type: string
           required: true
       responses:
         200:
@@ -316,6 +316,26 @@ paths:
             application/json:
               schema:
                 $ref: './openapi-model.yaml#/components/schemas/KnowledgeSearchResponseDto'
+  /v1/rest/jrag/knowledge/markdown:
+    post:
+      tags: [ MarkdownProcessor ]
+      summary: 上传Markdown文件或文件包
+      description: 上传Markdown文件或文件包，包含Markdown文件、图片，支持后缀：md/zip/tar.gz/tar
+      operationId: uploadMarkdown
+      requestBody:
+        description: 上传的文件
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: ok
   /v1/rest/jrag/qa-template:
     get:
       tags: [ QaTemplate ]

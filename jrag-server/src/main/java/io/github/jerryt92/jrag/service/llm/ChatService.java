@@ -83,7 +83,7 @@ public class ChatService {
                         ChatResponseDto srcFileChatResponse = new ChatResponseDto();
                         MessageDto messageDto = new MessageDto();
                         messageDto.setRole(MessageDto.RoleEnum.ASSISTANT);
-                        Map<Integer, FileDto> fileDtoList = new LinkedHashMap<>();
+                        Map<String, FileDto> fileDtoList = new LinkedHashMap<>();
                         for (RagInfoDto ragInfoDto : ragInfoDtos) {
                             if (ragInfoDto.getSrcFile() != null && !fileDtoList.containsKey(ragInfoDto.getSrcFile().getId())) {
                                 fileDtoList.put(ragInfoDto.getSrcFile().getId(), ragInfoDto.getSrcFile());

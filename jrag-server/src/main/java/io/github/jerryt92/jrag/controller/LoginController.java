@@ -41,7 +41,8 @@ public class LoginController implements LoginApi {
     public ResponseEntity<Void> login(LoginRequestDto loginRequestDto) {
         SessionBo sessionBo = loginService.login(loginRequestDto.getUsername(), loginRequestDto.getPassword(), loginRequestDto.getValidateCode(), loginRequestDto.getHash());
         if (sessionBo != null) {
-            Cookie cookie = new Cookie("SESSION", sessionBo.getSessionId());
+            int port = request.getServerPort();
+            Cookie cookie = new Cookie("SESSION-" + port, sessionBo.getSessionId());
             cookie.setHttpOnly(true); // 阻止JavaScript 访问 Cookie
             cookie.setPath("/");      // 根据实际需求设置 path
             response.addCookie(cookie);
@@ -59,7 +60,7 @@ public class LoginController implements LoginApi {
     @Override
     public ResponseEntity<VerifySlideCaptcha200Response> verifySlideCaptcha(Float sliderX, String hash) {
         VerifySlideCaptcha200Response response = new VerifySlideCaptcha200Response();
-        String code = captchaService.verifySlideCaptchaGetClassicCaptcha(sliderX, hash);
+        String code = captchaService.verifySlideCaptchaGetCaptchaCode(sliderX, hash);
         if (null != code) {
             response.setResult(true);
             response.setCode(code);
@@ -72,15 +73,13 @@ public class LoginController implements LoginApi {
     @Override
     public ResponseEntity<Void> logout() {
         Cookie[] cookies = request.getCookies();
+        int port = request.getServerPort();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
-                if (cookie.getName().equals("SESSION")) {
+                if (cookie.getName().equals("SESSION-" + port)) {
                     if (cookie.getValue() != null) {
                         loginService.logout(cookie.getValue());
                     }
-                    cookie.setPath("/");
-                    cookie.setMaxAge(0);
-                    response.addCookie(cookie);
                 }
             }
         }
