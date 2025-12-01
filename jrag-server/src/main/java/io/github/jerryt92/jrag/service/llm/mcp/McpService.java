@@ -1,18 +1,22 @@
 package io.github.jerryt92.jrag.service.llm.mcp;
 
 import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.jerryt92.jrag.service.llm.tools.FunctionCallingService;
 import io.github.jerryt92.jrag.service.llm.tools.ToolInterface;
 import io.modelcontextprotocol.client.McpClient;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.client.transport.HttpClientSseClientTransport;
+import io.modelcontextprotocol.client.transport.HttpClientStreamableHttpTransport;
 import io.modelcontextprotocol.client.transport.StdioClientTransport;
+import io.modelcontextprotocol.json.jackson.JacksonMcpJsonMapper;
 import io.modelcontextprotocol.spec.McpClientTransport;
 import io.modelcontextprotocol.spec.McpSchema;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.mcp.client.autoconfigure.properties.McpSseClientProperties;
-import org.springframework.ai.mcp.client.autoconfigure.properties.McpStdioClientProperties;
+import org.springframework.ai.mcp.client.common.autoconfigure.properties.McpSseClientProperties;
+import org.springframework.ai.mcp.client.common.autoconfigure.properties.McpStdioClientProperties;
+import org.springframework.ai.mcp.client.common.autoconfigure.properties.McpStreamableHttpClientProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -32,6 +36,7 @@ import java.util.Set;
 @Service
 public class McpService {
     public Map<String, McpSseClientProperties.SseParameters> mcpSseServerParameters = new HashMap<>();
+    public Map<String, McpStreamableHttpClientProperties.ConnectionParameters> mcpStreamableServerParameters = new HashMap<>();
     public Map<String, McpStdioClientProperties.Parameters> mcpStdioServerParameters = new HashMap<>();
     public Map<String, McpSyncClient> mcpName2Client = new HashMap<>();
     public Map<String, Set<String>> mcpClient2tools = new HashMap<>();
@@ -73,7 +78,16 @@ public class McpService {
                                         log.error("", e);
                                     }
                                 } else if ("streamable_http".equals(mcpServer.getString("type"))) {
-                                    log.error("Streamable http is not supported yet, waiting for Spring AI release, mcp server name: {}", mcpServerName);
+                                    try {
+                                        URI uri = new URI(mcpServer.getString("url"));
+                                        String baseUrl = uri.getScheme() + "://" + uri.getHost();
+                                        mcpStreamableServerParameters.put(
+                                                mcpServerName,
+                                                new McpStreamableHttpClientProperties.ConnectionParameters(baseUrl, uri.getPath())
+                                        );
+                                    } catch (URISyntaxException e) {
+                                        log.error("", e);
+                                    }
                                 } else {
                                     String command = mcpServer.getString("command");
                                     List<String> args = mcpServer.getList("args", String.class);
@@ -94,6 +108,7 @@ public class McpService {
                         }
                         mcpServerNames = new HashSet<>();
                         mcpServerNames.addAll(mcpSseServerParameters.keySet());
+                        mcpServerNames.addAll(mcpStreamableServerParameters.keySet());
                         mcpServerNames.addAll(mcpStdioServerParameters.keySet());
                     }
                 }
@@ -123,12 +138,18 @@ public class McpService {
             McpClientTransport mcpClientTransport = null;
             McpStdioClientProperties.Parameters parameters = mcpStdioServerParameters.get(mcpServerName);
             McpSseClientProperties.SseParameters sseParameters = mcpSseServerParameters.get(mcpServerName);
+            McpStreamableHttpClientProperties.ConnectionParameters streamableHttpParameters = mcpStreamableServerParameters.get(mcpServerName);
             if (parameters != null) {
-                mcpClientTransport = new StdioClientTransport(parameters.toServerParameters());
+                mcpClientTransport = new StdioClientTransport(parameters.toServerParameters(), new JacksonMcpJsonMapper(new ObjectMapper()));
             } else if (sseParameters != null) {
                 mcpClientTransport = HttpClientSseClientTransport
                         .builder(sseParameters.url())
                         .sseEndpoint(sseParameters.sseEndpoint())
+                        .build();
+            } else if (streamableHttpParameters != null) {
+                mcpClientTransport = HttpClientStreamableHttpTransport
+                        .builder(streamableHttpParameters.url())
+                        .endpoint(streamableHttpParameters.endpoint())
                         .build();
             }
             McpSyncClient mcpSyncClient = McpClient.sync(mcpClientTransport)
