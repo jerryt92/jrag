@@ -10,6 +10,7 @@ import io.github.jerryt92.jrag.model.openai.OpenAIModel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.WriteBufferWaterMark;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.ai.model.ModelOptionsUtils;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -177,7 +178,7 @@ public class OpenAiClient extends LlmClient {
                                 functionCallingInfoMap.put(sseCallback.subscriptionId, toolCallFunction);
                             }
                             for (OpenAIModel.ToolCall openAiToolCall : openAiToolCalls) {
-                                if (openAiToolCall.getFunction().getName() != null) {
+                                if (StringUtils.isNotBlank(openAiToolCall.getFunction().getName())) {
                                     toolCallFunction.setName(openAiToolCall.getFunction().getName());
                                 }
                                 if (openAiToolCall.getFunction().getArguments() != null) {

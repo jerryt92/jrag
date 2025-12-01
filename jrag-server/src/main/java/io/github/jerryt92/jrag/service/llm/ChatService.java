@@ -95,7 +95,7 @@ public class ChatService {
                     }
                 }
                 chatContextBo.chat(request, sseCallback);
-                log.info("问: " + request.getMessages().get(request.getMessages().size() - 1).getContent());
+                log.info("问: " + request.getMessages().getLast().getContent());
             }
         } catch (Throwable t) {
             sseCallback.errorCall.accept(t);
