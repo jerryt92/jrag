@@ -1,13 +1,12 @@
 package io.github.jerryt92.jrag.service.llm;
 
-import io.github.jerryt92.jrag.config.CommonProperties;
 import io.github.jerryt92.jrag.config.LlmProperties;
+import io.github.jerryt92.jrag.model.ChatCallback;
 import io.github.jerryt92.jrag.model.ChatRequestDto;
 import io.github.jerryt92.jrag.model.ChatResponseDto;
 import io.github.jerryt92.jrag.model.FileDto;
 import io.github.jerryt92.jrag.model.MessageDto;
 import io.github.jerryt92.jrag.model.RagInfoDto;
-import io.github.jerryt92.jrag.model.SseCallback;
 import io.github.jerryt92.jrag.model.Translator;
 import io.github.jerryt92.jrag.service.llm.client.LlmClient;
 import io.github.jerryt92.jrag.service.llm.tools.FunctionCallingService;
@@ -34,26 +33,24 @@ public class ChatService {
     private final ChatContextStorageService chatContextStorageService;
     private final LlmProperties llmProperties;
     private final Retriever retriever;
-    static Map<String, SseCallback> contextSseCallbackMap = new HashMap<>();
-    private final CommonProperties commonProperties;
+    static Map<String, ChatCallback<ChatResponseDto>> contextChatCallbackMap = new HashMap<>();
 
-    public ChatService(LlmClient llmClient, FunctionCallingService functionCallingService, ChatContextService chatContextService, ChatContextStorageService chatContextStorageService, LlmProperties llmProperties, Retriever retriever, CommonProperties commonProperties) {
+    public ChatService(LlmClient llmClient, FunctionCallingService functionCallingService, ChatContextService chatContextService, ChatContextStorageService chatContextStorageService, LlmProperties llmProperties, Retriever retriever) {
         this.llmClient = llmClient;
         this.functionCallingService = functionCallingService;
         this.chatContextService = chatContextService;
         this.chatContextStorageService = chatContextStorageService;
         this.llmProperties = llmProperties;
         this.retriever = retriever;
-        this.commonProperties = commonProperties;
     }
 
-    public void handleChat(SseCallback sseCallback, ChatRequestDto request, String userId) {
+    public void handleChat(ChatCallback<ChatResponseDto> chatChatCallback, ChatRequestDto request, String userId) {
         try {
             String contextId = request.getContextId();
             if (contextId == null) {
                 contextId = UUIDUtil.randomUUID();
             }
-            contextSseCallbackMap.put(contextId, sseCallback);
+            contextChatCallbackMap.put(contextId, chatChatCallback);
             // 从src/main/resources/system_prompt.txt中获取
             String systemPrompt = null;
             try (InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("system_prompt.txt")) {
@@ -91,22 +88,14 @@ public class ChatService {
                         }
                         messageDto.setSrcFile(new ArrayList<>(fileDtoList.values()));
                         srcFileChatResponse.setMessage(messageDto);
-                        sseCallback.responseCall.accept(srcFileChatResponse);
+                        chatChatCallback.responseCall.accept(srcFileChatResponse);
                     }
                 }
-                chatContextBo.chat(request, sseCallback);
+                chatContextBo.chat(request, chatChatCallback);
                 log.info("问: " + request.getMessages().getLast().getContent());
             }
         } catch (Throwable t) {
-            sseCallback.errorCall.accept(t);
-        }
-    }
-
-    public void interruptChat(String contextId) {
-        SseCallback sseCallback = contextSseCallbackMap.remove(contextId);
-        if (sseCallback != null) {
-            log.error("interruptChat: " + contextId);
-            sseCallback.completeCall.run();
+            chatChatCallback.errorCall.accept(t);
         }
     }
 }

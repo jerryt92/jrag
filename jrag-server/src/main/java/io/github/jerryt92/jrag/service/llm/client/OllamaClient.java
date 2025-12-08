@@ -1,13 +1,11 @@
 package io.github.jerryt92.jrag.service.llm.client;
 
 import io.github.jerryt92.jrag.config.LlmProperties;
+import io.github.jerryt92.jrag.model.ChatCallback;
 import io.github.jerryt92.jrag.model.ChatModel;
 import io.github.jerryt92.jrag.model.FunctionCallingModel;
-import io.github.jerryt92.jrag.model.SseCallback;
 import io.github.jerryt92.jrag.model.ollama.OllamaModel;
 import io.github.jerryt92.jrag.model.ollama.OllamaOptions;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.WriteBufferWaterMark;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.model.ModelOptionsUtils;
 import org.springframework.http.MediaType;
@@ -25,7 +23,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
 
 @Slf4j
 public class OllamaClient extends LlmClient {
@@ -34,16 +31,13 @@ public class OllamaClient extends LlmClient {
 
     public OllamaClient(LlmProperties llmProperties) {
         super(llmProperties);
-        this.webClient = WebClient.builder()
-                .clientConnector(new ReactorClientHttpConnector(HttpClient.create().protocol(HttpProtocol.HTTP11)))
-                .clientConnector(new ReactorClientHttpConnector(HttpClient.create().option(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(1024 * 1024, 1024 * 1024 * 50))))
-                .build();
+        this.webClient = WebClient.builder().clientConnector(new ReactorClientHttpConnector(HttpClient.create().protocol(HttpProtocol.HTTP11))).build();
     }
 
     private final Set<String> functionCallingSet = new HashSet<>();
 
     @Override
-    public Disposable chat(ChatModel.ChatRequest chatRequest, SseCallback sseCallback, Consumer<ChatModel.ChatResponse> onResponse, Consumer<? super Throwable> onError, Runnable onComplete) {
+    public Disposable chat(ChatModel.ChatRequest chatRequest, ChatCallback<ChatModel.ChatResponse> chatCallback) {
         List<OllamaModel.Message> messagesContext = new ArrayList<>();
         for (ChatModel.Message chatMessage : chatRequest.getMessages()) {
             OllamaModel.Message ollamaMessage = new OllamaModel.Message()
@@ -103,8 +97,6 @@ public class OllamaClient extends LlmClient {
             }
             request.setTools(ollamaTools);
         }
-        // Debug
-//        log.info(org.springframework.ai.model.ModelOptionsUtils.toJsonString(request));
         log.info("context length:{}", ModelOptionsUtils.toJsonString(request).length());
         Flux<OllamaModel.ChatResponse> eventStream = webClient.post()
                 .uri(llmProperties.ollamaBaseUrl + "/api/chat")
@@ -114,53 +106,50 @@ public class OllamaClient extends LlmClient {
                 .retrieve()
                 .bodyToFlux(OllamaModel.ChatResponse.class)
                 .doOnError(t -> {
-                    functionCallingSet.remove(sseCallback.subscriptionId);
-                    if (onError != null) {
-                        onError.accept(t);
-                    }
+                    functionCallingSet.remove(chatCallback.subscriptionId);
+                    chatCallback.errorCall.accept(t);
                 }).doOnComplete(() -> {
-                    if (!functionCallingSet.remove(sseCallback.subscriptionId)) {
-                        if (onComplete != null) {
-                            onComplete.run();
-                        }
+                    if (!functionCallingSet.remove(chatCallback.subscriptionId)) {
+                        chatCallback.completeCall.run();
                     }
                 });
-        return eventStream.subscribe(ollamaResponse -> this.consumeResponse(ollamaResponse, onResponse, sseCallback));
+        return eventStream.subscribe(ollamaResponse -> this.consumeResponse(ollamaResponse, chatCallback));
     }
 
-    private void consumeResponse(OllamaModel.ChatResponse ollamaResponse, Consumer<ChatModel.ChatResponse> onResponse, SseCallback sseCallback) {
+    private void consumeResponse(OllamaModel.ChatResponse ollamaResponse, ChatCallback<ChatModel.ChatResponse> chatCallback) {
         List<ChatModel.ToolCall> toolCalls = null;
         if (ollamaResponse == null) {
-            sseCallback.completeCall.run();
-        }
-        if (!CollectionUtils.isEmpty(ollamaResponse.getMessage().getToolCalls())) {
-            // 模型有function calling请求
-            functionCallingSet.add(sseCallback.subscriptionId);
-            toolCalls = new ArrayList<>();
-            for (OllamaModel.ToolCall ollamaToolCall : ollamaResponse.getMessage().getToolCalls()) {
-                if (ollamaToolCall.getFunction() != null) {
-                    ChatModel.ToolCall toolCall = new ChatModel.ToolCall()
-                            .setFunction(
-                                    new ChatModel.ToolCallFunction()
-                                            .setName(ollamaToolCall.getFunction().getName())
-                                            .setArguments(List.of(ollamaToolCall.getFunction().getArguments()))
-                            );
-                    toolCalls.add(toolCall);
+            chatCallback.completeCall.run();
+        } else {
+            if (ollamaResponse.getMessage() != null && !CollectionUtils.isEmpty(ollamaResponse.getMessage().getToolCalls())) {
+                // 模型有function calling请求
+                functionCallingSet.add(chatCallback.subscriptionId);
+                toolCalls = new ArrayList<>();
+                for (OllamaModel.ToolCall ollamaToolCall : ollamaResponse.getMessage().getToolCalls()) {
+                    if (ollamaToolCall.getFunction() != null) {
+                        ChatModel.ToolCall toolCall = new ChatModel.ToolCall()
+                                .setFunction(
+                                        new ChatModel.ToolCallFunction()
+                                                .setName(ollamaToolCall.getFunction().getName())
+                                                .setArguments(List.of(ollamaToolCall.getFunction().getArguments()))
+                                );
+                        toolCalls.add(toolCall);
+                    }
                 }
             }
+            if (ollamaResponse.getDone() && functionCallingSet.contains(chatCallback.subscriptionId)) {
+                return;
+            }
+            ChatModel.ChatResponse chatResponse = new ChatModel.ChatResponse()
+                    .setMessage(
+                            new ChatModel.Message()
+                                    .setRole(ChatModel.Role.ASSISTANT)
+                                    .setContent(ollamaResponse.getMessage().getContent())
+                                    .setToolCalls(toolCalls)
+                    )
+                    .setDone(ollamaResponse.getDone())
+                    .setDoneReason(ollamaResponse.getDoneReason());
+            chatCallback.responseCall.accept(chatResponse);
         }
-        if (ollamaResponse.getDone() && functionCallingSet.contains(sseCallback.subscriptionId)) {
-            return;
-        }
-        ChatModel.ChatResponse chatResponse = new ChatModel.ChatResponse()
-                .setMessage(
-                        new ChatModel.Message()
-                                .setRole(ChatModel.Role.ASSISTANT)
-                                .setContent(ollamaResponse.getMessage().getContent())
-                                .setToolCalls(toolCalls)
-                )
-                .setDone(ollamaResponse.getDone())
-                .setDoneReason(ollamaResponse.getDoneReason());
-        onResponse.accept(chatResponse);
     }
 }

@@ -3,12 +3,10 @@ package io.github.jerryt92.jrag.service.llm.client;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import io.github.jerryt92.jrag.config.LlmProperties;
+import io.github.jerryt92.jrag.model.ChatCallback;
 import io.github.jerryt92.jrag.model.ChatModel;
 import io.github.jerryt92.jrag.model.FunctionCallingModel;
-import io.github.jerryt92.jrag.model.SseCallback;
 import io.github.jerryt92.jrag.model.openai.OpenAIModel;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.WriteBufferWaterMark;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.ai.model.ModelOptionsUtils;
@@ -25,7 +23,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 @Slf4j
 public class OpenAiClient extends LlmClient {
@@ -34,9 +31,11 @@ public class OpenAiClient extends LlmClient {
 
     public OpenAiClient(LlmProperties llmProperties) {
         super(llmProperties);
-        this.webClient = WebClient.builder()
-                .clientConnector(new ReactorClientHttpConnector(HttpClient.create().protocol(HttpProtocol.HTTP11)))
-                .clientConnector(new ReactorClientHttpConnector(HttpClient.create().option(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(1024 * 1024, 1024 * 1024 * 50))))
+        this.webClient = WebClient.builder().clientConnector(
+                        new ReactorClientHttpConnector(
+                                HttpClient.create().protocol(HttpProtocol.HTTP11)
+                        )
+                )
                 .baseUrl(llmProperties.openAiBaseUrl)
                 .defaultHeader("Authorization", "Bearer " + llmProperties.openAiKey)
                 .build();
@@ -45,7 +44,7 @@ public class OpenAiClient extends LlmClient {
     private final Map<String, ChatModel.ToolCallFunction> functionCallingInfoMap = new HashMap<>();
 
     @Override
-    public Disposable chat(ChatModel.ChatRequest chatRequest, SseCallback sseCallback, Consumer<ChatModel.ChatResponse> onResponse, Consumer<? super Throwable> onError, Runnable onComplete) {
+    public Disposable chat(ChatModel.ChatRequest chatRequest, ChatCallback<ChatModel.ChatResponse> chatCallback) {
         List<OpenAIModel.ChatCompletionMessage> messagesContext = new ArrayList<>();
         for (ChatModel.Message chatMessage : chatRequest.getMessages()) {
             OpenAIModel.ChatCompletionMessage openAiMessage = new OpenAIModel.ChatCompletionMessage()
@@ -72,7 +71,7 @@ public class OpenAiClient extends LlmClient {
                             }
                             OpenAIModel.ChatCompletionFunction openAiFunction = new OpenAIModel.ChatCompletionFunction()
                                     .setName(toolCall.getFunction().getName())
-                                    .setArguments(toolCall.getFunction().getArgumentsStream().toString());
+                                    .setArguments(toolCall.getFunction().getArguments().toString());
                             openAiToolCall.setFunction(openAiFunction);
                             openAiMessage.getToolCalls().add(openAiToolCall);
                         }
@@ -99,7 +98,7 @@ public class OpenAiClient extends LlmClient {
                         tool.getDescription(),
                         tool.getName(),
                         FunctionCallingModel.generateToolParameters(tool.getParameters()),
-                        true
+                        false
                 );
                 functionTool.setFunction(function);
                 openAiTools.add(functionTool);
@@ -117,27 +116,32 @@ public class OpenAiClient extends LlmClient {
                 .retrieve()
                 .bodyToFlux(String.class)
                 .doOnError(t -> {
-                    functionCallingInfoMap.remove(sseCallback.subscriptionId);
-                    if (onError != null) {
-                        onError.accept(t);
-                    }
+                    functionCallingInfoMap.remove(chatCallback.subscriptionId);
+                    chatCallback.errorCall.accept(t);
                 }).doOnComplete(() -> {
-                    if (functionCallingInfoMap.remove(sseCallback.subscriptionId) == null) {
-                        if (onComplete != null) {
-                            onComplete.run();
-                        }
+                    if (functionCallingInfoMap.remove(chatCallback.subscriptionId) == null) {
+                        chatCallback.completeCall.run();
                     }
                 });
-        return eventStream.subscribe(chatCompletionChunk -> this.consumeResponse(chatCompletionChunk, onResponse, sseCallback, onError));
+        return eventStream.subscribe(chatCompletionChunk -> this.consumeResponse(chatCompletionChunk, chatCallback));
     }
 
-    private void consumeResponse(String response, Consumer<ChatModel.ChatResponse> onResponse, SseCallback sseCallback, Consumer<? super Throwable> onError) {
+    private void consumeResponse(String response, ChatCallback<ChatModel.ChatResponse> chatCallback) {
         try {
-            ChatModel.ToolCallFunction toolCallFunction = functionCallingInfoMap.get(sseCallback.subscriptionId);
+            ChatModel.ToolCallFunction toolCallFunction = functionCallingInfoMap.get(chatCallback.subscriptionId);
             if (response.trim().equals("[DONE]")) {
                 if (toolCallFunction != null) {
                     // Function calling输出完成
-                    String argumentsString = "[" + toolCallFunction.getArgumentsStream().toString().replace("}{", "},{") + "]";
+                    String argumentsString;
+                    try {
+                        String rawArgs = toolCallFunction.getArgumentsStream().toString();
+                        // 尝试解析原始参数字符串为JSONArray
+                        JSONArray argArray = JSONArray.parseArray(rawArgs);
+                        argumentsString = argArray.toJSONString(); // 使用标准格式输出
+                    } catch (Exception e) {
+                        // 如果解析失败，则回退到原来的处理方式
+                        argumentsString = "[" + toolCallFunction.getArgumentsStream().toString().replace("}{", "},{") + "]";
+                    }
                     List<JSONObject> argumentJsons = JSONArray.parseArray(argumentsString, JSONObject.class);
                     List<Map<String, Object>> argumentMaps = new ArrayList<>(argumentJsons);
                     toolCallFunction.setArguments(argumentMaps);
@@ -151,7 +155,7 @@ public class OpenAiClient extends LlmClient {
                                             .setToolCalls(List.of(toolCall))
                             )
                             .setDone(true);
-                    onResponse.accept(chatResponse);
+                    chatCallback.responseCall.accept(chatResponse);
                 } else {
                     ChatModel.ChatResponse chatResponse = new ChatModel.ChatResponse()
                             .setMessage(
@@ -160,7 +164,7 @@ public class OpenAiClient extends LlmClient {
                                             .setContent("")
                             )
                             .setDone(true);
-                    onResponse.accept(chatResponse);
+                    chatCallback.responseCall.accept(chatResponse);
                 }
             } else {
                 OpenAIModel.ChatCompletionChunk chatCompletionChunk = ModelOptionsUtils.jsonToObject(response, OpenAIModel.ChatCompletionChunk.class);
@@ -175,7 +179,7 @@ public class OpenAiClient extends LlmClient {
                             if (toolCallFunction == null) {
                                 toolCallFunction = new ChatModel.ToolCallFunction();
                                 toolCallFunction.setArgumentsStream(new StringBuilder());
-                                functionCallingInfoMap.put(sseCallback.subscriptionId, toolCallFunction);
+                                functionCallingInfoMap.put(chatCallback.subscriptionId, toolCallFunction);
                             }
                             for (OpenAIModel.ToolCall openAiToolCall : openAiToolCalls) {
                                 if (StringUtils.isNotBlank(openAiToolCall.getFunction().getName())) {
@@ -207,14 +211,14 @@ public class OpenAiClient extends LlmClient {
                                     )
                                     .setDone(false)
                                     .setDoneReason(finishReason == null ? null : finishReason.toString());
-                            onResponse.accept(chatResponse);
+                            chatCallback.responseCall.accept(chatResponse);
                         }
                     }
                 }
             }
         } catch (Throwable t) {
             log.error("", t);
-            onError.accept(t);
+            chatCallback.errorCall.accept(t);
         }
     }
 }

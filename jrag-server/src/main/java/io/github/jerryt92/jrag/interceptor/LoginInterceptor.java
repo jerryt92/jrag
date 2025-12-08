@@ -1,6 +1,5 @@
 package io.github.jerryt92.jrag.interceptor;
 
-import io.github.jerryt92.jrag.service.security.LoginService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -13,29 +12,22 @@ import org.springframework.web.servlet.HandlerInterceptor;
 @Component
 public class LoginInterceptor implements HandlerInterceptor {
 
-    private final LoginService loginService;
+    private final ApiLoginChecker apiLoginChecker;
 
-    public LoginInterceptor(LoginService loginService) {
-        this.loginService = loginService;
+    public LoginInterceptor(ApiLoginChecker apiLoginChecker) {
+        this.apiLoginChecker = apiLoginChecker;
     }
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         Cookie[] cookies = request.getCookies();
         int port = request.getServerPort();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if (cookie.getName().equals("SESSION-" + port)) {
-                    if (cookie.getValue() != null) {
-                        if (loginService.validateSession(cookie.getValue())) {
-                            loginService.sessionThreadLocal.set(cookie.getValue());
-                            return true;
-                        }
-                    }
-                }
-            }
+        boolean checkedLogin = apiLoginChecker.checkLogin(cookies, port);
+        if (checkedLogin) {
+            return true;
+        } else {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+            return false;
         }
-        response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-        return false;
     }
 }
