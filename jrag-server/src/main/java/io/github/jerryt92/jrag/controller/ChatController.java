@@ -1,6 +1,7 @@
 package io.github.jerryt92.jrag.controller;
 
 import com.alibaba.fastjson2.JSONObject;
+import io.github.jerryt92.jrag.config.CommonProperties;
 import io.github.jerryt92.jrag.config.annotation.AutoRegisterWebSocketHandler;
 import io.github.jerryt92.jrag.model.ChatCallback;
 import io.github.jerryt92.jrag.model.ChatContextDto;
@@ -19,7 +20,6 @@ import io.github.jerryt92.jrag.service.security.LoginService;
 import io.github.jerryt92.jrag.utils.UUIDUtil;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.socket.CloseStatus;
@@ -33,17 +33,18 @@ import java.util.Objects;
 
 @Log4j2
 @RestController
-@Qualifier("jrag.alive.checker")
 @AutoRegisterWebSocketHandler(path = "/ws/jrag/chat", allowedOrigin = "*")
 public class ChatController extends AbstractWebSocketHandler implements ChatApi {
     private final ChatContextService chatContextService;
     private final ChatService chatService;
     private final LoginService loginService;
+    private final CommonProperties commonProperties;
 
-    public ChatController(ChatContextService chatContextService, ChatService chatService, LoginService loginService) {
+    public ChatController(ChatContextService chatContextService, ChatService chatService, LoginService loginService, CommonProperties commonProperties) {
         this.chatContextService = chatContextService;
         this.chatService = chatService;
         this.loginService = loginService;
+        this.commonProperties = commonProperties;
     }
 
     @Override
@@ -95,7 +96,7 @@ public class ChatController extends AbstractWebSocketHandler implements ChatApi 
         } catch (IOException e) {
             closeSession(wsSession);
         }
-        SessionBo session = loginService.getSession();
+        SessionBo session = commonProperties.publicMode ? null : loginService.getSession();
         ChatCallback<ChatResponseDto> innerChatChatCallback = getSseCallback(wsSession);
         innerChatChatCallback.responseCall = chatResponse -> {
             try {
