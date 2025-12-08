@@ -1,5 +1,6 @@
 package io.github.jerryt92.jrag.config.annotation;
 
+import io.github.jerryt92.jrag.interceptor.WebsocketLoginInterceptor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
@@ -17,9 +18,11 @@ import java.util.List;
 @EnableWebSocket
 public class WebSocketHandlerAutoRegister implements WebSocketConfigurer {
     final List<WebSocketHandler> webSocketHandlers;
+    private final WebsocketLoginInterceptor websocketLoginInterceptor;
 
-    public WebSocketHandlerAutoRegister(List<WebSocketHandler> webSocketHandlers) {
+    public WebSocketHandlerAutoRegister(List<WebSocketHandler> webSocketHandlers, WebsocketLoginInterceptor websocketLoginInterceptor) {
         this.webSocketHandlers = webSocketHandlers;
+        this.websocketLoginInterceptor = websocketLoginInterceptor;
     }
 
     @Override
@@ -30,6 +33,7 @@ public class WebSocketHandlerAutoRegister implements WebSocketConfigurer {
                     AutoRegisterWebSocketHandler annotation =
                             webSocketHandler.getClass().getDeclaredAnnotation(AutoRegisterWebSocketHandler.class);
                     registry.addHandler(webSocketHandler, annotation.path())
+                            .addInterceptors(websocketLoginInterceptor)
                             .setAllowedOrigins(annotation.allowedOrigin());
                 }
             }

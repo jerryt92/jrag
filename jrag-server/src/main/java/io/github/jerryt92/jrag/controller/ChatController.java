@@ -1,14 +1,14 @@
 package io.github.jerryt92.jrag.controller;
 
-import io.github.jerryt92.jrag.config.CommonProperties;
+import com.alibaba.fastjson2.JSONObject;
 import io.github.jerryt92.jrag.config.annotation.AutoRegisterWebSocketHandler;
+import io.github.jerryt92.jrag.model.ChatCallback;
 import io.github.jerryt92.jrag.model.ChatContextDto;
 import io.github.jerryt92.jrag.model.ChatRequestDto;
 import io.github.jerryt92.jrag.model.ChatResponseDto;
 import io.github.jerryt92.jrag.model.ContextIdDto;
 import io.github.jerryt92.jrag.model.HistoryContextList;
 import io.github.jerryt92.jrag.model.MessageFeedbackRequest;
-import io.github.jerryt92.jrag.model.SseCallback;
 import io.github.jerryt92.jrag.model.Translator;
 import io.github.jerryt92.jrag.model.security.SessionBo;
 import io.github.jerryt92.jrag.server.api.ChatApi;
@@ -17,13 +17,13 @@ import io.github.jerryt92.jrag.service.llm.ChatContextService;
 import io.github.jerryt92.jrag.service.llm.ChatService;
 import io.github.jerryt92.jrag.service.security.LoginService;
 import io.github.jerryt92.jrag.utils.UUIDUtil;
+import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.socket.CloseStatus;
+import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.AbstractWebSocketHandler;
 
@@ -31,62 +31,19 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 
+@Log4j2
 @RestController
 @Qualifier("jrag.alive.checker")
-@AutoRegisterWebSocketHandler(path = "/ws/jrag/chat/alive", allowedOrigin = "*")
+@AutoRegisterWebSocketHandler(path = "/ws/jrag/chat", allowedOrigin = "*")
 public class ChatController extends AbstractWebSocketHandler implements ChatApi {
     private final ChatContextService chatContextService;
     private final ChatService chatService;
     private final LoginService loginService;
-    private final CommonProperties commonProperties;
 
-    public ChatController(ChatContextService chatContextService, ChatService chatService, LoginService loginService, CommonProperties commonProperties) {
+    public ChatController(ChatContextService chatContextService, ChatService chatService, LoginService loginService) {
         this.chatContextService = chatContextService;
         this.chatService = chatService;
         this.loginService = loginService;
-        this.commonProperties = commonProperties;
-    }
-
-    @PostMapping("/v1/rest/jrag/chat")
-    public SseEmitter chat(@RequestBody ChatRequestDto chatRequestDto) {
-        SseEmitter sseEmitter = new SseEmitter(120000L);
-        try {
-            sseEmitter.send(new ChatResponseDto());
-        } catch (IOException e) {
-            sseEmitter.completeWithError(e);
-        }
-        SessionBo session = commonProperties.publicMode ? null : loginService.getSession();
-        SseCallback sseCallback = new SseCallback(
-                UUIDUtil.randomUUID(),
-                chatResponse -> {
-                    try {
-                        sseEmitter.send(chatResponse);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                },
-                sseEmitter::complete,
-                t -> {
-                    try {
-                        ChatResponseDto errorResponse = new ChatResponseDto().done(true).error(true);
-                        if (t instanceof org.springframework.web.reactive.function.client.WebClientResponseException ex) {
-                            errorResponse.setErrorCode(String.valueOf(ex.getStatusCode().value()));
-                            errorResponse.setErrorMessage(ex.getResponseBodyAsString());
-                        } else {
-                            errorResponse.setErrorMessage(t.getMessage());
-                        }
-                        sseEmitter.send(SseEmitter.event().name("error").data(errorResponse));
-                    } catch (IOException e) {
-                        sseEmitter.completeWithError(e);
-                    }
-                },
-                sseEmitter::complete
-        );
-        sseEmitter.onCompletion(() -> sseCallback.onSseCompletion.run());
-        sseEmitter.onTimeout(() -> sseCallback.onSseTimeout.run());
-        sseEmitter.onError((t) -> sseCallback.onSseError.accept(t));
-        Thread.startVirtualThread(() -> chatService.handleChat(sseCallback, chatRequestDto, session == null ? null : session.getUserId()));
-        return sseEmitter;
     }
 
     @Override
@@ -120,12 +77,75 @@ public class ChatController extends AbstractWebSocketHandler implements ChatApi 
     }
 
     @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-        super.afterConnectionClosed(session, status);
+    public void afterConnectionEstablished(WebSocketSession session) {
         String contextId = getParam("context-id", Objects.requireNonNull(session.getUri()).toString());
-        if (contextId != null) {
-            chatService.interruptChat(contextId);
+        if (StringUtils.isNotBlank(contextId)) {
+            session.getAttributes().put("contextId", contextId);
+            session.getAttributes().put("callback", new ChatCallback<ChatResponseDto>(UUIDUtil.randomUUID()));
+        } else {
+            closeSession(session);
         }
+    }
+
+    @Override
+    protected void handleTextMessage(WebSocketSession wsSession, TextMessage message) {
+        ChatRequestDto chatRequestDto = JSONObject.parseObject(message.getPayload(), ChatRequestDto.class);
+        try {
+            wsSession.sendMessage(new TextMessage(JSONObject.toJSONString(new ChatResponseDto())));
+        } catch (IOException e) {
+            closeSession(wsSession);
+        }
+        SessionBo session = loginService.getSession();
+        ChatCallback<ChatResponseDto> innerChatChatCallback = getSseCallback(wsSession);
+        innerChatChatCallback.responseCall = chatResponse -> {
+            try {
+                wsSession.sendMessage(new TextMessage(JSONObject.toJSONString(chatResponse)));
+            } catch (Throwable t) {
+                log.error("", t);
+                closeSession(wsSession);
+            }
+        };
+        innerChatChatCallback.completeCall = () -> closeSession(wsSession);
+        innerChatChatCallback.errorCall = t -> {
+            try {
+                ChatResponseDto errorResponse = new ChatResponseDto().done(true).error(true);
+                if (t instanceof org.springframework.web.reactive.function.client.WebClientResponseException ex) {
+                    errorResponse.setErrorCode(String.valueOf(ex.getStatusCode().value()));
+                    errorResponse.setErrorMessage(ex.getResponseBodyAsString());
+                } else {
+                    errorResponse.setErrorMessage(t.getMessage());
+                }
+                wsSession.sendMessage(new TextMessage(JSONObject.toJSONString(errorResponse)));
+            } catch (Throwable e) {
+                log.error("", e);
+            }
+        };
+        Thread.startVirtualThread(() -> chatService.handleChat(innerChatChatCallback, chatRequestDto, session == null ? null : session.getUserId()));
+    }
+
+    private void closeSession(WebSocketSession session) {
+        try {
+            session.close();
+        } catch (Throwable t) {
+            log.error("", t);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private ChatCallback<ChatResponseDto> getSseCallback(WebSocketSession session) {
+        Object callbackObj = session.getAttributes().get("callback");
+        if (callbackObj instanceof ChatCallback) {
+            return (ChatCallback<ChatResponseDto>) callbackObj;
+        }
+        throw new IllegalStateException("Callback attribute is missing or invalid");
+    }
+
+
+    @Override
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+        ChatCallback<ChatResponseDto> chatCallback = getSseCallback(session);
+        chatCallback.onWebsocketClose.run();
+        super.afterConnectionClosed(session, status);
     }
 
     private static String getParam(String param, String url) {
