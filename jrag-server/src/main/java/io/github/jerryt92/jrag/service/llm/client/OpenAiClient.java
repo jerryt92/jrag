@@ -79,6 +79,7 @@ public class OpenAiClient extends LlmClient {
                     break;
                 case TOOL:
                     openAiMessage.setRole(OpenAIModel.Role.TOOL);
+                    openAiMessage.setToolCallId(chatMessage.getToolCallId());
                     break;
             }
             messagesContext.add(openAiMessage);

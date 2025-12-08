@@ -140,9 +140,9 @@ public class ChatContextBo {
         }
     }
 
-    protected void toolCallResponse(Collection<FunctionCallingModel.ToolResponse> toolResponses, ChatCallback<ChatResponseDto> chatChatCallback) {
+    protected void toolCallResponse(Collection<FunctionCallingModel.ToolResponse> toolResponses, String toolCallId, ChatCallback<ChatResponseDto> chatChatCallback) {
         lastRequest.getMessages().add(lastFunctionCallingMassage);
-        lastRequest.getMessages().add(FunctionCallingModel.buildToolResponseMessage(toolResponses));
+        lastRequest.getMessages().add(FunctionCallingModel.buildToolResponseMessage(toolResponses, toolCallId));
         try {
             ChatCallback<ChatModel.ChatResponse> chatCallback = new ChatCallback<>(
                     chatChatCallback.subscriptionId,
@@ -166,17 +166,17 @@ public class ChatContextBo {
                 for (ChatModel.ToolCall toolCall : response.getMessage().getToolCalls()) {
                     if (toolCall.getFunction() != null) {
                         try {
-                            Future<List<String>> stringFuture = functionCallingService.functionCalling(toolCall);
+                            Future<ChatModel.ToolCallResult> stringFuture = functionCallingService.functionCalling(toolCall);
                             functionCallingFutures.put(stringFuture, stringFuture);
-                            List<String> result = stringFuture.get();
+                            ChatModel.ToolCallResult toolCallResult = stringFuture.get();
                             log.info("FunctionCalling: {}", toolCall.getFunction().getName());
-                            log.info("FunctionCalling result: {}", result);
-                            if (result != null) {
+                            log.info("FunctionCalling result: {}", toolCallResult.getResults());
+                            if (toolCallResult.getResults() != null) {
                                 toolCallResponse(Collections.singletonList(
                                         new FunctionCallingModel.ToolResponse()
                                                 .setName(toolCall.getFunction().getName())
-                                                .setResponseData(result)
-                                ), chatChatCallback);
+                                                .setResponseData(toolCallResult.getResults())
+                                ), toolCallResult.getId(), chatChatCallback);
                             }
                             chatChatCallback.onWebsocketClose = () -> {
                                 stringFuture.cancel(true);

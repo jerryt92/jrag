@@ -49,6 +49,8 @@ public class ChatModel {
         Feedback feedback = Feedback.NONE;
         @JsonProperty("tool_calls")
         List<ToolCall> toolCalls;
+        @JsonProperty("tool_call_id")
+        String toolCallId;
         // 引用文件
         @JsonProperty("rag_infos")
         List<RagInfoDto> ragInfos;
@@ -120,6 +122,14 @@ public class ChatModel {
     public static class ToolCall {
         @JsonProperty("function")
         ToolCallFunction function;
+    }
+
+    @Data
+    @Accessors(chain = true)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class ToolCallResult {
+        String id;
+        List<String> results;
     }
 
     @Data

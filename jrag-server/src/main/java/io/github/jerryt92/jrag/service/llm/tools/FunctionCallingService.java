@@ -35,18 +35,22 @@ public class FunctionCallingService {
         log.info("Loaded {} function calling tools", tools.size());
     }
 
-    public Future<List<String>> functionCalling(ChatModel.ToolCall toolCall) {
+    public Future<ChatModel.ToolCallResult> functionCalling(ChatModel.ToolCall toolCall) {
         // 创建 FutureTask 来包装任务
-        FutureTask<List<String>> futureTask = new FutureTask<>(() -> {
+        FutureTask<ChatModel.ToolCallResult> futureTask = new FutureTask<>(() -> {
+            ChatModel.ToolCallResult result = new ChatModel.ToolCallResult();
+            result.setId(toolCall.getFunction().getId());
             log.info("FunctionCalling: {}", toolCall.getFunction().getName());
             log.info("FunctionCalling args: {}", toolCall.getFunction().getArguments());
             ToolInterface toolBean = tools.get(toolCall.getFunction().getName());
             if (toolBean == null) {
                 String format = String.format("Tool %s not found", toolCall.getFunction().getName());
                 log.error(format);
-                return List.of(format);
+                result.setResults(List.of(format));
+                return result;
             }
-            return toolBean.apply(toolCall.getFunction().getArguments());
+            result.setResults(toolBean.apply(toolCall.getFunction().getArguments()));
+            return result;
         });
         try {
             // 启动虚拟线程
