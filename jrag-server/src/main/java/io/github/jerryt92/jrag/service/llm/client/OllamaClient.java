@@ -118,7 +118,7 @@ public class OllamaClient extends LlmClient {
 
     private void consumeResponse(OllamaModel.ChatResponse ollamaResponse, ChatCallback<ChatModel.ChatResponse> chatCallback) {
         List<ChatModel.ToolCall> toolCalls = null;
-        if (ollamaResponse == null) {
+        if (ollamaResponse == null || (ollamaResponse.getDone() == null && ollamaResponse.getModel() == null)) {
             chatCallback.completeCall.run();
         } else {
             if (ollamaResponse.getMessage() != null && !CollectionUtils.isEmpty(ollamaResponse.getMessage().getToolCalls())) {
@@ -137,7 +137,7 @@ public class OllamaClient extends LlmClient {
                     }
                 }
             }
-            if (ollamaResponse.getDone() && functionCallingSet.contains(chatCallback.subscriptionId)) {
+            if (Boolean.TRUE.equals(ollamaResponse.getDone()) && functionCallingSet.contains(chatCallback.subscriptionId)) {
                 return;
             }
             ChatModel.ChatResponse chatResponse = new ChatModel.ChatResponse()
