@@ -37,7 +37,7 @@ jrag:
       model-name: Qwen/Qwen3-235B-A22B
       base-url: https://api-inference.modelscope.cn
       completions-path: /v1/chat/completions
-      key:
+      key: ms-02fd741d-98f5-4067-bc9b-5d8072223186
   embedding:
     # 嵌入向量维度
     dimension: 768
