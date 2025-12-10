@@ -20,6 +20,16 @@ Jrag is a RAG (Retrieval-Augmented Generation) and MCP tool integration platform
 
 ![architecture](assets/architecture.png)
 
+## UI
+
+The interface style is elegant and uses a glassy style, supporting dark mode.
+
+![ui1](assets/ui/1.png)
+
+![ui2](assets/ui/2.png)
+
+![ui3](assets/ui/3.png)
+
 ## Purpose
 
 So far, most open-source RAG platforms are implemented in Python. As a Java developer, I hope Jrag can be more suitable for Java developers' use, providing better LLM integration and application for Java developers.

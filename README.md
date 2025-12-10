@@ -20,6 +20,16 @@ Jrag 是一个基于 Java Spring Boot 的 RAG（Retrieval-Augmented Generation�
 
 ![architecture](assets/architecture.png)
 
+## 界面
+
+界面风格灵动，采用毛玻璃风格，支持暗色模式。
+
+![ui1](assets/ui/1.png)
+
+![ui2](assets/ui/2.png)
+
+![ui3](assets/ui/3.png)
+
 ## 用途
 
 目前为止开源的 RAG 平台中，基本都是Python实现的，作为Javer，希望 Jrag 能够更适合 Java 开发者的使用，提供更适合 Java 开发者的LLM集成与应用。
