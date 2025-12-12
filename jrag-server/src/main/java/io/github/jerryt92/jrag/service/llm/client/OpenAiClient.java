@@ -155,10 +155,8 @@ public class OpenAiClient extends LlmClient {
                                         .setToolCalls(List.of(toolCall)))
                                 .setDone(true);
                         chatCallback.responseCall.accept(chatResponse);
-
                     } catch (Exception e) {
                         log.error("Final JSON parsing failed even after SmartFix. Raw: {}, Fixed: {}", rawArgs, finalArgumentsString, e);
-                        // 这里可以考虑给用户一个更友好的错误提示，或者回调 errorCall
                         chatCallback.errorCall.accept(e);
                     }
                 } else {
@@ -172,6 +170,7 @@ public class OpenAiClient extends LlmClient {
                             .setDone(true);
                     chatCallback.responseCall.accept(chatResponse);
                 }
+                chatCallback.completeCall.run();
             } else {
                 // ============== 处理非 [DONE] 的流式数据块 ==============
                 OpenAIModel.ChatCompletionChunk chatCompletionChunk = ModelOptionsUtils.jsonToObject(response, OpenAIModel.ChatCompletionChunk.class);

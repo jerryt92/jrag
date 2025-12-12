@@ -44,6 +44,8 @@ public class ChatContextBo {
 
     private final FunctionCallingService functionCallingService;
 
+    private boolean isWaitingFunction = false;
+
     private Disposable eventStreamDisposable;
 
     private List<FunctionCallingModel.Tool> tools;
@@ -168,6 +170,7 @@ public class ChatContextBo {
                         try {
                             Future<ChatModel.ToolCallResult> stringFuture = functionCallingService.functionCalling(toolCall);
                             functionCallingFutures.put(stringFuture, stringFuture);
+                            isWaitingFunction = true;
                             ChatModel.ToolCallResult toolCallResult = stringFuture.get();
                             log.info("FunctionCalling: {}", toolCall.getFunction().getName());
                             log.info("FunctionCalling result: {}", toolCallResult.getResults());
@@ -220,7 +223,10 @@ public class ChatContextBo {
                 .setRole(ChatModel.Role.ASSISTANT)
                 .setContent("");
         this.lastRagInfos = null;
-        chatChatCallback.completeCall.run();
+        if (!isWaitingFunction) {
+            chatChatCallback.completeCall.run();
+        }
+        isWaitingFunction = false;
         functionCallingFutures.forEach((future, future1) -> future.cancel(true));
         chatContextStorageService.storageChatContextToDb(this);
     }
@@ -231,6 +237,7 @@ public class ChatContextBo {
         } else {
             log.error("", t);
         }
+        isWaitingFunction = false;
         functionCallingFutures.forEach((future, future1) -> future.cancel(true));
         chatChatCallback.errorCall.accept(t);
     }
