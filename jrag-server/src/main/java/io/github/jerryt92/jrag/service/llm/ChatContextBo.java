@@ -44,6 +44,8 @@ public class ChatContextBo {
 
     private final FunctionCallingService functionCallingService;
 
+    private boolean isWaitingFunction = false;
+
     private Disposable eventStreamDisposable;
 
     private List<FunctionCallingModel.Tool> tools;
@@ -140,9 +142,9 @@ public class ChatContextBo {
         }
     }
 
-    protected void toolCallResponse(Collection<FunctionCallingModel.ToolResponse> toolResponses, ChatCallback<ChatResponseDto> chatChatCallback) {
+    protected void toolCallResponse(Collection<FunctionCallingModel.ToolResponse> toolResponses, String toolCallId, ChatCallback<ChatResponseDto> chatChatCallback) {
         lastRequest.getMessages().add(lastFunctionCallingMassage);
-        lastRequest.getMessages().add(FunctionCallingModel.buildToolResponseMessage(toolResponses));
+        lastRequest.getMessages().add(FunctionCallingModel.buildToolResponseMessage(toolResponses, toolCallId));
         try {
             ChatCallback<ChatModel.ChatResponse> chatCallback = new ChatCallback<>(
                     chatChatCallback.subscriptionId,
@@ -168,6 +170,7 @@ public class ChatContextBo {
                         try {
                             Future<List<String>> stringFuture = functionCallingService.functionCalling(toolCall);
                             functionCallingFutures.put(stringFuture, stringFuture);
+                            isWaitingFunction = true;
                             List<String> result = stringFuture.get();
                             log.info("FunctionCalling: {}", toolCall.getFunction().getName());
                             log.info("FunctionCalling result: {}", result);
@@ -220,7 +223,10 @@ public class ChatContextBo {
                 .setRole(ChatModel.Role.ASSISTANT)
                 .setContent("");
         this.lastRagInfos = null;
-        chatChatCallback.completeCall.run();
+        if (!isWaitingFunction) {
+            chatChatCallback.completeCall.run();
+        }
+        isWaitingFunction = false;
         functionCallingFutures.forEach((future, future1) -> future.cancel(true));
         chatContextStorageService.storageChatContextToDb(this);
     }
@@ -231,6 +237,7 @@ public class ChatContextBo {
         } else {
             log.error("", t);
         }
+        isWaitingFunction = false;
         functionCallingFutures.forEach((future, future1) -> future.cancel(true));
         chatChatCallback.errorCall.accept(t);
     }

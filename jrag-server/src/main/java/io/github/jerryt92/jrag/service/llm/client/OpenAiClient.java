@@ -7,6 +7,7 @@ import io.github.jerryt92.jrag.model.ChatCallback;
 import io.github.jerryt92.jrag.model.ChatModel;
 import io.github.jerryt92.jrag.model.FunctionCallingModel;
 import io.github.jerryt92.jrag.model.openai.OpenAIModel;
+import io.github.jerryt92.jrag.utils.SmartJsonFixer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.ai.model.ModelOptionsUtils;
@@ -98,7 +99,7 @@ public class OpenAiClient extends LlmClient {
                         tool.getDescription(),
                         tool.getName(),
                         FunctionCallingModel.generateToolParameters(tool.getParameters()),
-                        false
+                        true
                 );
                 functionTool.setFunction(function);
                 openAiTools.add(functionTool);
@@ -131,32 +132,35 @@ public class OpenAiClient extends LlmClient {
             ChatModel.ToolCallFunction toolCallFunction = functionCallingInfoMap.get(chatCallback.subscriptionId);
             if (response.trim().equals("[DONE]")) {
                 if (toolCallFunction != null) {
-                    // Function calling输出完成
-                    String argumentsString;
+                    String rawArgs = toolCallFunction.getArgumentsStream().toString();
+
+                    // ============================================
+                    // 核心修改：使用 SmartJsonFixer 进行终极修复
+                    // ============================================
+                    String finalArgumentsString = SmartJsonFixer.fix(rawArgs);
+
                     try {
-                        String rawArgs = toolCallFunction.getArgumentsStream().toString();
-                        // 尝试解析原始参数字符串为JSONArray
-                        JSONArray argArray = JSONArray.parseArray(rawArgs);
-                        argumentsString = argArray.toJSONString(); // 使用标准格式输出
+                        // 此时 finalArgumentsString 已经被 SmartJsonFixer 修复为标准的 JSON 数组格式
+                        // 无论是 {key=value}, {"key": 1+1}, 还是多重引号，都已被处理。
+                        List<JSONObject> argumentJsons = JSONArray.parseArray(finalArgumentsString, JSONObject.class);
+                        List<Map<String, Object>> argumentMaps = new ArrayList<>(argumentJsons);
+                        toolCallFunction.setArguments(argumentMaps);
+
+                        // ... 构建 ChatResponse 并回调 (与原逻辑一致) ...
+                        ChatModel.ToolCall toolCall = new ChatModel.ToolCall().setFunction(toolCallFunction);
+                        ChatModel.ChatResponse chatResponse = new ChatModel.ChatResponse()
+                                .setMessage(new ChatModel.Message()
+                                        .setRole(ChatModel.Role.ASSISTANT)
+                                        .setContent("")
+                                        .setToolCalls(List.of(toolCall)))
+                                .setDone(true);
+                        chatCallback.responseCall.accept(chatResponse);
                     } catch (Exception e) {
-                        // 如果解析失败，则回退到原来的处理方式
-                        argumentsString = "[" + toolCallFunction.getArgumentsStream().toString().replace("}{", "},{") + "]";
+                        log.error("Final JSON parsing failed even after SmartFix. Raw: {}, Fixed: {}", rawArgs, finalArgumentsString, e);
+                        chatCallback.errorCall.accept(e);
                     }
-                    List<JSONObject> argumentJsons = JSONArray.parseArray(argumentsString, JSONObject.class);
-                    List<Map<String, Object>> argumentMaps = new ArrayList<>(argumentJsons);
-                    toolCallFunction.setArguments(argumentMaps);
-                    ChatModel.ToolCall toolCall = new ChatModel.ToolCall()
-                            .setFunction(toolCallFunction);
-                    ChatModel.ChatResponse chatResponse = new ChatModel.ChatResponse()
-                            .setMessage(
-                                    new ChatModel.Message()
-                                            .setRole(ChatModel.Role.ASSISTANT)
-                                            .setContent("")
-                                            .setToolCalls(List.of(toolCall))
-                            )
-                            .setDone(true);
-                    chatCallback.responseCall.accept(chatResponse);
                 } else {
+                    // 非 Function Calling，内容已输出完毕
                     ChatModel.ChatResponse chatResponse = new ChatModel.ChatResponse()
                             .setMessage(
                                     new ChatModel.Message()
@@ -166,16 +170,20 @@ public class OpenAiClient extends LlmClient {
                             .setDone(true);
                     chatCallback.responseCall.accept(chatResponse);
                 }
+                chatCallback.completeCall.run();
             } else {
+                // ============== 处理非 [DONE] 的流式数据块 ==============
                 OpenAIModel.ChatCompletionChunk chatCompletionChunk = ModelOptionsUtils.jsonToObject(response, OpenAIModel.ChatCompletionChunk.class);
                 List<ChatModel.ToolCall> toolCalls = null;
                 StringBuilder content = new StringBuilder();
                 OpenAIModel.ChatCompletionFinishReason finishReason = null;
                 if (chatCompletionChunk.getChoices() != null) {
                     for (OpenAIModel.ChatCompletionChunk.ChunkChoice chunkChoice : chatCompletionChunk.getChoices()) {
+
                         if (!CollectionUtils.isEmpty(chunkChoice.getDelta().getToolCalls())) {
-                            // 模型有function calling请求
+                            // 模型有 function calling 请求
                             List<OpenAIModel.ToolCall> openAiToolCalls = chunkChoice.getDelta().getToolCalls();
+                            // 初始化或获取 toolCallFunction
                             if (toolCallFunction == null) {
                                 toolCallFunction = new ChatModel.ToolCallFunction();
                                 toolCallFunction.setArgumentsStream(new StringBuilder());
@@ -186,6 +194,7 @@ public class OpenAiClient extends LlmClient {
                                     toolCallFunction.setName(openAiToolCall.getFunction().getName());
                                 }
                                 if (openAiToolCall.getFunction().getArguments() != null) {
+                                    // 仅仅进行字符串拼接，不在此处解析
                                     toolCallFunction.getArgumentsStream().append(openAiToolCall.getFunction().getArguments());
                                 }
                                 if (openAiToolCall.getIndex() != null) {
@@ -196,12 +205,14 @@ public class OpenAiClient extends LlmClient {
                                 }
                             }
                         } else {
+                            // 模型返回文本内容
                             if (chunkChoice.getDelta().getRawContent() != null) {
                                 content.append(chunkChoice.getDelta().getRawContent());
                             }
                             if (chunkChoice.getFinishReason() != null) {
                                 finishReason = chunkChoice.getFinishReason();
                             }
+                            // 发送当前内容的流式响应
                             ChatModel.ChatResponse chatResponse = new ChatModel.ChatResponse()
                                     .setMessage(
                                             new ChatModel.Message()
@@ -217,7 +228,7 @@ public class OpenAiClient extends LlmClient {
                 }
             }
         } catch (Throwable t) {
-            log.error("", t);
+            log.error("Error processing chat completion chunk.", t);
             chatCallback.errorCall.accept(t);
         }
     }
