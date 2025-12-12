@@ -23,32 +23,21 @@ jrag:
   public-mode: true
   llm:
     demo: false
-    temperature: 0.5
+    temperature: 0
     llm-provider: open-ai
     use-rag: false
     use-tools: true
     ollama:
-#      model-name: qwen3:14b
-#      base-url: http://127.0.0.1:11434
-#      # 模型驻留时间
-#      keep_alive_seconds: 3600
-#      context-length: 32768
-
-      model-name: qwen3:14b-q8_0
-      base-url: http://172.16.8.107:11434
+      model-name: qwen2.5:14b
+      base-url: http://127.0.0.1:11434
       # 模型驻留时间
       keep_alive_seconds: 3600
       context-length: 32768
     open-ai:
-      model-name: qwen3-14b-mlx
-      base-url: http://127.0.0.1:1234
+      model-name: Qwen/Qwen3-235B-A22B
+      base-url: https://api-inference.modelscope.cn
       completions-path: /v1/chat/completions
-      key:
-#      model-name: 4.0Ultra
-#      base-url: https://spark-api-open.xf-yun.com
-#      completions-path: /v1/chat/completions
-#      key: RSvigWgMWgarwaTMNuBn:jMbCLBVJezEiHSqFCgpR
-#      use-tools: true
+      key: ms-02fd741d-98f5-4067-bc9b-5d8072223186
   embedding:
     # 嵌入向量维度
     dimension: 768

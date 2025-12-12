@@ -142,9 +142,9 @@ public class ChatContextBo {
         }
     }
 
-    protected void toolCallResponse(Collection<FunctionCallingModel.ToolResponse> toolResponses, String toolCallId, ChatCallback<ChatResponseDto> chatChatCallback) {
+    protected void toolCallResponse(Collection<FunctionCallingModel.ToolResponse> toolResponses, ChatCallback<ChatResponseDto> chatChatCallback) {
         lastRequest.getMessages().add(lastFunctionCallingMassage);
-        lastRequest.getMessages().add(FunctionCallingModel.buildToolResponseMessage(toolResponses, toolCallId));
+        lastRequest.getMessages().add(FunctionCallingModel.buildToolResponseMessage(toolResponses));
         try {
             ChatCallback<ChatModel.ChatResponse> chatCallback = new ChatCallback<>(
                     chatChatCallback.subscriptionId,
