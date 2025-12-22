@@ -217,13 +217,13 @@ public class ChatContextBo {
     private void onComplete(ChatCallback<ChatResponseDto> chatChatCallback) {
         // 流结束
         log.info("回答" + ": " + this.lastAssistantMassage.getContent());
-        this.lastAssistantMassage.setRagInfos(this.lastRagInfos);
-        this.messages.add(this.lastAssistantMassage);
-        this.lastAssistantMassage = new ChatModel.Message()
-                .setRole(ChatModel.Role.ASSISTANT)
-                .setContent("");
-        this.lastRagInfos = null;
         if (!isWaitingFunction) {
+            this.lastAssistantMassage.setRagInfos(this.lastRagInfos);
+            this.messages.add(this.lastAssistantMassage);
+            this.lastAssistantMassage = new ChatModel.Message()
+                    .setRole(ChatModel.Role.ASSISTANT)
+                    .setContent("");
+            this.lastRagInfos = null;
             chatChatCallback.completeCall.run();
         }
         isWaitingFunction = false;
