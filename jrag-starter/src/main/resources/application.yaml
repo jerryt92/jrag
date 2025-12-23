@@ -32,10 +32,11 @@ jrag:
       keep_alive_seconds: 3600
       context-length: 32768
     open-ai:
-      model-name: Qwen/Qwen3-235B-A22B
-      base-url: https://api-inference.modelscope.cn
-      completions-path: /v1/chat/completions
-      key:
+      model-name: qwen-plus
+      base-url: https://dashscope.aliyuncs.com
+      completions-path: /compatible-mode/v1/chat/completions
+      context-length: 131072
+      key: sk-ee6e65b7c9784751b41121d78e58778b
   embedding:
     # 嵌入向量维度
     dimension: 768
