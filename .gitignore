@@ -78,7 +78,6 @@ tags
 ########### eclipse
 
 .metadata
-bin/
 tmp/
 *.tmp
 *.bak
@@ -179,3 +178,4 @@ logs/
 # macOS
 .DS_Store
 /jrag-starter/src/main/resources/dist/
+/jrag-starter/src/main/middleware/macosx-apple-silicon/milvus-lite/milvus_data/

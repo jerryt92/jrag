@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ApiLoginChecker {
+
     private final LoginService loginService;
 
     public ApiLoginChecker(LoginService loginService) {
@@ -13,18 +14,22 @@ public class ApiLoginChecker {
     }
 
     public boolean checkLogin(Cookie[] cookies, int port) {
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if (cookie.getName().equals("SESSION-" + port)) {
-                    if (cookie.getValue() != null) {
-                        if (loginService.validateSession(cookie.getValue())) {
-                            loginService.sessionThreadLocal.set(cookie.getValue());
-                            return true;
+        if (loginService.getNoUser()) {
+            return true;
+        } else {
+            if (cookies != null) {
+                for (Cookie cookie : cookies) {
+                    if (cookie.getName().equals("SESSION-" + port)) {
+                        if (cookie.getValue() != null) {
+                            if (loginService.validateSession(cookie.getValue())) {
+                                loginService.sessionThreadLocal.set(cookie.getValue());
+                                return true;
+                            }
                         }
                     }
                 }
             }
+            return false;
         }
-        return false;
     }
 }

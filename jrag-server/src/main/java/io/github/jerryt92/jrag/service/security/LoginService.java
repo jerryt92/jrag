@@ -6,6 +6,9 @@ import io.github.jerryt92.jrag.po.mgb.UserPo;
 import io.github.jerryt92.jrag.po.mgb.UserPoExample;
 import io.github.jerryt92.jrag.utils.UUIDUtil;
 import io.github.jerryt92.jrag.utils.UserUtil;
+import jakarta.annotation.PostConstruct;
+import lombok.Getter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -18,11 +21,32 @@ import java.util.concurrent.TimeUnit;
 @Service
 @EnableScheduling
 public class LoginService {
+    @Value("${jrag.security.no-user}")
+    @Getter
+    private Boolean noUser;
+    private SessionBo noUserSession;
     private static final ConcurrentHashMap<String, SessionBo> SESSION_MAP = new ConcurrentHashMap<>();
     private static final long EXPIRE_TIME_MINUTES = 30;
     private final UserPoMapper userPoMapper;
     private final CaptchaService captchaService;
     public ThreadLocal<String> sessionThreadLocal = new ThreadLocal();
+
+    @PostConstruct
+    public void init() {
+        // 如果启用无用户模式，则所有用户都是administrator
+        if (noUser) {
+            UserPoExample example = new UserPoExample();
+            example.createCriteria().andUsernameNotEqualTo("administrator");
+            List<UserPo> userPos = userPoMapper.selectByExample(example);
+            UserPo userPo = userPos.getFirst();
+            noUserSession = new SessionBo();
+            noUserSession.setSessionId(UUIDUtil.randomUUID());
+            noUserSession.setUserId(userPo.getId());
+            noUserSession.setUsername(userPo.getUsername());
+            noUserSession.setExpireTime(-1);
+            noUserSession.setRole(SessionBo.RoleEnum.fromValue(userPo.getRole()));
+        }
+    }
 
     public LoginService(UserPoMapper userPoMapper, CaptchaService captchaService) {
         this.userPoMapper = userPoMapper;
@@ -55,12 +79,20 @@ public class LoginService {
     }
 
     public SessionBo getSession(String sessionId) {
-        return SESSION_MAP.get(sessionId);
+        if (noUser) {
+            return noUserSession;
+        } else {
+            return SESSION_MAP.get(sessionId);
+        }
     }
 
     public SessionBo getSession() {
-        String sessionId = this.sessionThreadLocal.get();
-        return getSession(sessionId);
+        if (noUser) {
+            return noUserSession;
+        } else {
+            String sessionId = this.sessionThreadLocal.get();
+            return getSession(sessionId);
+        }
     }
 
     public void logout(String sessionId) {

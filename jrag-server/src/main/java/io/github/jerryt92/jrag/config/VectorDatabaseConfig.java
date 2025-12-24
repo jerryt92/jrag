@@ -2,6 +2,7 @@ package io.github.jerryt92.jrag.config;
 
 import io.github.jerryt92.jrag.mapper.mgb.EmbeddingsItemPoMapper;
 import io.github.jerryt92.jrag.service.rag.vdb.VectorDatabaseService;
+import io.github.jerryt92.jrag.service.rag.vdb.milvus.MilvusLiteService;
 import io.github.jerryt92.jrag.service.rag.vdb.milvus.MilvusService;
 import io.milvus.v2.common.IndexParam;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,6 +35,16 @@ public class VectorDatabaseConfig {
                         milvusToken,
                         dimension,
                         IndexParam.MetricType.valueOf("COSINE")
+                );
+                break;
+            case "milvus-lite":
+                vectorDatabaseService = new MilvusLiteService(
+                        embeddingsItemPoMapper,
+                        "http://localhost:29530",
+                        milvusCollectionName,
+                        milvusToken,
+                        dimension,
+                        "COSINE"
                 );
                 break;
             default:

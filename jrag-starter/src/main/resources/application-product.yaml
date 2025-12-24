@@ -19,6 +19,8 @@ jrag:
   security:
     captcha:
       expire-seconds: 300
+    # 无用户模式
+    no-user: true
   llm:
     demo: false
     temperature: 0
@@ -51,7 +53,7 @@ jrag:
       embeddings-path: /v1/embeddings
       key:
   vector-database:
-    provider: milvus
+    provider: milvus-lite
     milvus:
       cluster-endpoint: http://127.0.0.1:19530
       collection-name: jrag
