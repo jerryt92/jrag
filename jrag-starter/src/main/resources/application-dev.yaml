@@ -41,10 +41,10 @@ jrag:
       key:
   embedding:
     # 嵌入向量维度
-    dimension: 768
+    dimension: 2560
     embedding-provider: ollama
     ollama:
-      model-name: nomic-embed-text:latest
+      model-name: qwen3-embedding:4b
       base-url: http://127.0.0.1:11434
       # 模型驻留时间
       keep_alive_seconds: 3600
