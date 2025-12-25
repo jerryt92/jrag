@@ -37,8 +37,7 @@ public class VectorDatabaseConfig {
                 vectorDatabaseService = new MilvusLiteService(
                         "http://localhost:29530",
                         milvusCollectionName,
-                        milvusToken,
-                        "COSINE"
+                        milvusToken
                 );
                 break;
             default:

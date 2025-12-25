@@ -22,7 +22,7 @@ import java.util.Map;
 @Slf4j
 public class MilvusLiteService implements VectorDatabaseService {
     private final String collectionName;
-    private final String metricType;
+    private String metricType;
 
     private final WebClient webClient;
     private final Gson gson; // 引入 Gson
@@ -30,11 +30,9 @@ public class MilvusLiteService implements VectorDatabaseService {
     public MilvusLiteService(
             String clusterEndpoint,
             String collectionName,
-            String token,
-            String metricType
+            String token
     ) {
         this.collectionName = collectionName;
-        this.metricType = metricType;
         this.gson = new Gson(); // 初始化 Gson
 
         String validEndpoint = clusterEndpoint.endsWith("/")
@@ -47,9 +45,9 @@ public class MilvusLiteService implements VectorDatabaseService {
                 .build();
     }
 
-
     @Override
-    public void reBuildVectorDatabase(int dimension) {
+    public void reBuildVectorDatabase(int dimension, String metricTypeStr) {
+        metricType = metricTypeStr;
         // 1. 构建 Schema
         Map<String, Object> schemaPayload = buildSchemaPayload(dimension);
         sendRequest("/collections/create", schemaPayload);
