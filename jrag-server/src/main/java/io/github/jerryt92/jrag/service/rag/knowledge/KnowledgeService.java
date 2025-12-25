@@ -280,6 +280,7 @@ public class KnowledgeService {
                             oldEmbeddingsItem.getDescription(),
                             oldEmbeddingsItem.getCreateUserId()
                     );
+                    embeddingsItemPo.setHash(oldEmbeddingsItem.getHash());
                     newEmbeddingsItemPoList.add(embeddingsItemPo);
                 }
                 transactionTemplate.executeWithoutResult(status -> {

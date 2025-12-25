@@ -32,8 +32,8 @@ create table embeddings_item
 (
     hash                 char(40)    not null
         primary key,
-    embedding_model      varchar(32) not null,
-    embedding_provider   varchar(32) not null,
+    embedding_model      varchar(256) not null,
+    embedding_provider   varchar(256) not null,
     check_embedding_hash varchar(64) not null,
     text                 text        not null,
     embedding            text        not null,

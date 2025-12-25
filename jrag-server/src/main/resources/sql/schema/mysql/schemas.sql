@@ -39,8 +39,8 @@ DROP TABLE IF EXISTS embeddings_item;
 create table embeddings_item
 (
     hash                 char(40)     not null comment '嵌入text的哈希值（SHA-1），同时也作为唯一标识符' primary key,
-    embedding_model      varchar(32)  not null comment '嵌入模型名称',
-    embedding_provider   varchar(32)  not null comment '嵌入模型提供商名称',
+    embedding_model      varchar(256)  not null comment '嵌入模型名称',
+    embedding_provider   varchar(256)  not null comment '嵌入模型提供商名称',
     check_embedding_hash varchar(64)  not null comment '用于标记数据的嵌入模型是否一致，不一致则需要进行重新向量化',
     text                 text         not null comment '嵌入文本',
     embedding            text         not null comment '嵌入向量',
