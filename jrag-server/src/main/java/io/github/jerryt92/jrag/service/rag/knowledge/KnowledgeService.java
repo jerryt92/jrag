@@ -24,6 +24,9 @@ import io.github.jerryt92.jrag.service.rag.vdb.VectorDatabaseService;
 import io.github.jerryt92.jrag.utils.HashUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ibatis.session.ExecutorType;
+import org.apache.ibatis.session.SqlSession;
+import org.apache.ibatis.session.SqlSessionFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -49,8 +52,9 @@ public class KnowledgeService {
     private final UserPoMapper userPoMapper;
     private final TransactionTemplate transactionTemplate;
     private final VectorDatabaseService vectorDatabaseService;
+    private final SqlSessionFactory sqlSessionFactory;
 
-    public KnowledgeService(EmbeddingService embeddingService, MyTextChunkPoMapper myTextChunkPoMapper, EmbeddingsItemPoMapper embeddingsItemPoMapper, FilePoMapper filePoMapper, UserPoMapper userPoMapper, TransactionTemplate transactionTemplate, VectorDatabaseService vectorDatabaseService) {
+    public KnowledgeService(EmbeddingService embeddingService, MyTextChunkPoMapper myTextChunkPoMapper, EmbeddingsItemPoMapper embeddingsItemPoMapper, FilePoMapper filePoMapper, UserPoMapper userPoMapper, TransactionTemplate transactionTemplate, VectorDatabaseService vectorDatabaseService, SqlSessionFactory sqlSessionFactory) {
         this.embeddingService = embeddingService;
         this.myTextChunkPoMapper = myTextChunkPoMapper;
         this.embeddingsItemPoMapper = embeddingsItemPoMapper;
@@ -58,6 +62,7 @@ public class KnowledgeService {
         this.userPoMapper = userPoMapper;
         this.transactionTemplate = transactionTemplate;
         this.vectorDatabaseService = vectorDatabaseService;
+        this.sqlSessionFactory = sqlSessionFactory;
     }
 
     public KnowledgeGetListDto getKnowledge(Integer offset, Integer limit, String search) {
@@ -278,17 +283,22 @@ public class KnowledgeService {
                     newEmbeddingsItemPoList.add(embeddingsItemPo);
                 }
                 transactionTemplate.executeWithoutResult(status -> {
-                    // 关系型数据库删除旧数据数
-                    EmbeddingsItemPoExample deleteEmbeddingsItemPoExample = new EmbeddingsItemPoExample();
-                    deleteEmbeddingsItemPoExample.createCriteria().andHashIn(oldEmbeddingHashes);
-                    embeddingsItemPoMapper.deleteByExample(deleteEmbeddingsItemPoExample);
-                    // 关系型数据库保存新数据
-                    embeddingsItemPoMapper.batchInsertSelective(newEmbeddingsItemPoList, EmbeddingsItemPoWithBLOBs.Column.values());
+                    try (SqlSession sqlSession = sqlSessionFactory.openSession(ExecutorType.BATCH)) {
+                        EmbeddingsItemPoMapper embeddingsItemPoMapper = sqlSession.getMapper(EmbeddingsItemPoMapper.class);
+                        for (EmbeddingsItemPoWithBLOBs embeddingsItemPo : newEmbeddingsItemPoList) {
+                            embeddingsItemPoMapper.updateByPrimaryKeyWithBLOBs(embeddingsItemPo);
+                        }
+                        sqlSession.commit();
+                    }
                 });
-                // 向量数据库删除旧数据
-                vectorDatabaseService.deleteData(oldEmbeddingHashes);
-                // 向量数据库保存新数据
-                vectorDatabaseService.putData(newEmbeddingsItemPoList);
+                try {
+                    // 向量数据库删除旧数据
+                    vectorDatabaseService.deleteData(oldEmbeddingHashes);
+                    // 向量数据库保存新数据
+                    vectorDatabaseService.putData(newEmbeddingsItemPoList);
+                } catch (Throwable t) {
+                    log.error("", t);
+                }
             } else {
                 hasMore.set(false);
             }
