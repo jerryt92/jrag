@@ -35,23 +35,22 @@ public class MilvusService implements VectorDatabaseService {
     private final String clusterEndpoint;
     private final String collectionName;
     private final String token;
-    private final IndexParam.MetricType metricType;
+    private IndexParam.MetricType metricType;
     private MilvusClientV2 client;
 
     public MilvusService(
             String clusterEndpoint,
             String collectionName,
-            String token,
-            IndexParam.MetricType metricType
+            String token
     ) {
         this.clusterEndpoint = clusterEndpoint;
         this.collectionName = collectionName;
         this.token = token;
-        this.metricType = metricType;
     }
 
     @Override
-    public void reBuildVectorDatabase(int dimension) {
+    public void reBuildVectorDatabase(int dimension, String metricTypeStr) {
+        metricType = IndexParam.MetricType.valueOf(metricTypeStr);
         ConnectConfig connectConfig = ConnectConfig.builder()
                 .uri(clusterEndpoint)
                 .token(token)

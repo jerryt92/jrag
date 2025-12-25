@@ -6,7 +6,7 @@ import io.github.jerryt92.jrag.po.mgb.EmbeddingsItemPoWithBLOBs;
 import java.util.List;
 
 public interface VectorDatabaseService {
-    void reBuildVectorDatabase(int dimension);
+    void reBuildVectorDatabase(int dimension, String metricTypeStr);
 
     void initData(List<EmbeddingsItemPoWithBLOBs> embeddingsItemPos);
 

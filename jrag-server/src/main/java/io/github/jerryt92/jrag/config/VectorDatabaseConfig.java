@@ -4,7 +4,6 @@ import io.github.jerryt92.jrag.service.embedding.EmbeddingService;
 import io.github.jerryt92.jrag.service.rag.vdb.VectorDatabaseService;
 import io.github.jerryt92.jrag.service.rag.vdb.milvus.MilvusLiteService;
 import io.github.jerryt92.jrag.service.rag.vdb.milvus.MilvusService;
-import io.milvus.v2.common.IndexParam;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -31,8 +30,7 @@ public class VectorDatabaseConfig {
                 vectorDatabaseService = new MilvusService(
                         milvusClusterEndpoint,
                         milvusCollectionName,
-                        milvusToken,
-                        IndexParam.MetricType.valueOf("COSINE")
+                        milvusToken
                 );
                 break;
             case "milvus-lite":
