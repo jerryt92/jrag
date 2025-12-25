@@ -45,7 +45,7 @@ create table embeddings_item
     text                 text         not null comment '嵌入文本',
     embedding            text         not null comment '嵌入向量',
     text_chunk_id        char(40)     not null comment '文本块ID',
-    description          varchar(128) null comment '描述',
+    description          varchar(512) null comment '描述',
     create_time          bigint       null comment '创建时间',
     update_time          bigint       null comment '更新时间',
     create_user_id       varchar(32)  null comment '创建者ID'
@@ -71,7 +71,7 @@ create table text_chunk
     id             char(40)     not null comment '主键（文本块的SHA-1）' primary key,
     text_chunk     text         null comment '文本块',
     src_file_id    int          null comment '文本块文件ID',
-    description    varchar(128) null comment '描述',
+    description    varchar(512) null comment '描述',
     create_time    bigint       null comment '创建时间',
     update_time    bigint       null comment '更新时间',
     create_user_id varchar(32)  null comment '创建者ID'

@@ -38,7 +38,7 @@ create table embeddings_item
     text                 text        not null,
     embedding            text        not null,
     text_chunk_id        char(40)    not null,
-    description          varchar(128),
+    description          varchar(512),
     create_time          bigint,
     update_time          bigint,
     create_user_id       varchar(32)
@@ -64,7 +64,7 @@ create table text_chunk
         primary key,
     text_chunk     text,
     src_file_id    int,
-    description    varchar(128),
+    description    varchar(512),
     create_time    bigint,
     update_time    bigint,
     create_user_id varchar(32)
