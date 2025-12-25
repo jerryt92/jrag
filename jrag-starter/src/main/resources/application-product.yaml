@@ -39,8 +39,6 @@ jrag:
       completions-path: /v1/chat/completions
       key:
   embedding:
-    # 嵌入向量维度
-    dimension: 2560
     embedding-provider: ollama
     ollama:
       model-name: qwen3-embedding:4b

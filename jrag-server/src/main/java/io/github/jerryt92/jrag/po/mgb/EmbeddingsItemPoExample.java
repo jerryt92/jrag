@@ -497,6 +497,76 @@ public class EmbeddingsItemPoExample {
             return (Criteria) this;
         }
 
+        public Criteria andCheckEmbeddingHashIsNull() {
+            addCriterion("check_embedding_hash is null");
+            return (Criteria) this;
+        }
+
+        public Criteria andCheckEmbeddingHashIsNotNull() {
+            addCriterion("check_embedding_hash is not null");
+            return (Criteria) this;
+        }
+
+        public Criteria andCheckEmbeddingHashEqualTo(String value) {
+            addCriterion("check_embedding_hash =", value, "checkEmbeddingHash");
+            return (Criteria) this;
+        }
+
+        public Criteria andCheckEmbeddingHashNotEqualTo(String value) {
+            addCriterion("check_embedding_hash <>", value, "checkEmbeddingHash");
+            return (Criteria) this;
+        }
+
+        public Criteria andCheckEmbeddingHashGreaterThan(String value) {
+            addCriterion("check_embedding_hash >", value, "checkEmbeddingHash");
+            return (Criteria) this;
+        }
+
+        public Criteria andCheckEmbeddingHashGreaterThanOrEqualTo(String value) {
+            addCriterion("check_embedding_hash >=", value, "checkEmbeddingHash");
+            return (Criteria) this;
+        }
+
+        public Criteria andCheckEmbeddingHashLessThan(String value) {
+            addCriterion("check_embedding_hash <", value, "checkEmbeddingHash");
+            return (Criteria) this;
+        }
+
+        public Criteria andCheckEmbeddingHashLessThanOrEqualTo(String value) {
+            addCriterion("check_embedding_hash <=", value, "checkEmbeddingHash");
+            return (Criteria) this;
+        }
+
+        public Criteria andCheckEmbeddingHashLike(String value) {
+            addCriterion("check_embedding_hash like", value, "checkEmbeddingHash");
+            return (Criteria) this;
+        }
+
+        public Criteria andCheckEmbeddingHashNotLike(String value) {
+            addCriterion("check_embedding_hash not like", value, "checkEmbeddingHash");
+            return (Criteria) this;
+        }
+
+        public Criteria andCheckEmbeddingHashIn(List<String> values) {
+            addCriterion("check_embedding_hash in", values, "checkEmbeddingHash");
+            return (Criteria) this;
+        }
+
+        public Criteria andCheckEmbeddingHashNotIn(List<String> values) {
+            addCriterion("check_embedding_hash not in", values, "checkEmbeddingHash");
+            return (Criteria) this;
+        }
+
+        public Criteria andCheckEmbeddingHashBetween(String value1, String value2) {
+            addCriterion("check_embedding_hash between", value1, value2, "checkEmbeddingHash");
+            return (Criteria) this;
+        }
+
+        public Criteria andCheckEmbeddingHashNotBetween(String value1, String value2) {
+            addCriterion("check_embedding_hash not between", value1, value2, "checkEmbeddingHash");
+            return (Criteria) this;
+        }
+
         public Criteria andTextChunkIdIsNull() {
             addCriterion("text_chunk_id is null");
             return (Criteria) this;

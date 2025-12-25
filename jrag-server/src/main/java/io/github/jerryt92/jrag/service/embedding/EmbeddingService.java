@@ -6,6 +6,8 @@ import io.github.jerryt92.jrag.config.EmbeddingProperties;
 import io.github.jerryt92.jrag.model.EmbeddingModel;
 import io.github.jerryt92.jrag.model.ollama.OllamaModel;
 import io.github.jerryt92.jrag.model.openai.OpenAIModel;
+import io.github.jerryt92.jrag.utils.HashUtil;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -16,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -23,10 +26,14 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Service
 public class EmbeddingService {
+    // 用于标记数据的嵌入模型
+    @Getter
+    private String checkEmbeddingHash;
+    @Getter
+    private Integer dimension;
+    private final EmbeddingModel.EmbeddingsRequest checkEmbeddingsRequest = new EmbeddingModel.EmbeddingsRequest().setInput(List.of("test"));
     private final EmbeddingProperties embeddingProperties;
-
     private final OkHttpClient okHttpClient;
-
     private final String embeddingsPath;
 
     public EmbeddingService(@Autowired EmbeddingProperties embeddingProperties) {
@@ -49,6 +56,17 @@ public class EmbeddingService {
                         .build();
                 this.embeddingsPath = "/api/embed";
                 break;
+        }
+    }
+
+    public void init() {
+        try {
+            // 检查嵌入模型是否变化
+            EmbeddingModel.EmbeddingsItem testEmbed = embed(checkEmbeddingsRequest).getData().getFirst();
+            dimension = testEmbed.getEmbeddings().length;
+            checkEmbeddingHash = HashUtil.getMessageDigest(testEmbed.toString().getBytes(), HashUtil.MdAlgorithm.SHA256);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -83,6 +101,7 @@ public class EmbeddingService {
                                 embeddingsItems.add(new EmbeddingModel.EmbeddingsItem()
                                         .setEmbeddingProvider(embeddingProperties.embeddingProvider)
                                         .setEmbeddingModel(embeddingProperties.openAiModelName)
+                                        .setCheckEmbeddingHash(checkEmbeddingHash)
                                         .setText(embeddingsRequest.getInput().get(i))
                                         .setEmbeddings(openAIEmbeddingsResponse.getData().get(i).getEmbedding()));
                             }
@@ -122,6 +141,7 @@ public class EmbeddingService {
                                 embeddingsItems.add(new EmbeddingModel.EmbeddingsItem()
                                         .setEmbeddingProvider(embeddingProperties.embeddingProvider)
                                         .setEmbeddingModel(embeddingProperties.ollamaModelName)
+                                        .setCheckEmbeddingHash(checkEmbeddingHash)
                                         .setText(embeddingsRequest.getInput().get(i))
                                         .setEmbeddings(ollamaEmbeddingsResponse.getEmbeddings().get(i)));
                             }

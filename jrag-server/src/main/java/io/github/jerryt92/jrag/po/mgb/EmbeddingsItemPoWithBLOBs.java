@@ -80,6 +80,7 @@ public class EmbeddingsItemPoWithBLOBs extends EmbeddingsItemPo {
         hash("hash", "hash", "CHAR", false),
         embeddingModel("embedding_model", "embeddingModel", "VARCHAR", false),
         embeddingProvider("embedding_provider", "embeddingProvider", "VARCHAR", false),
+        checkEmbeddingHash("check_embedding_hash", "checkEmbeddingHash", "VARCHAR", false),
         textChunkId("text_chunk_id", "textChunkId", "CHAR", false),
         description("description", "description", "VARCHAR", false),
         createTime("create_time", "createTime", "BIGINT", false),

@@ -26,6 +26,8 @@ public class EmbeddingModel {
         String embeddingModel;
         // 嵌入模型提供商名称
         String embeddingProvider;
+        // 用于标记数据的嵌入模型
+        String checkEmbeddingHash;
         // 嵌入文本
         String text;
         // 嵌入向量

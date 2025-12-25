@@ -2,7 +2,6 @@ package io.github.jerryt92.jrag.service.rag.retrieval;
 
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
-import io.github.jerryt92.jrag.config.VectorDatabaseConfig;
 import io.github.jerryt92.jrag.mapper.mgb.FilePoMapper;
 import io.github.jerryt92.jrag.mapper.mgb.TextChunkPoMapper;
 import io.github.jerryt92.jrag.model.ChatModel;
@@ -40,15 +39,13 @@ public class Retriever {
     private final TextChunkPoMapper textChunkPoMapper;
     private final FilePoMapper filePoMapper;
     private final PropertiesService propertiesService;
-    private final VectorDatabaseConfig vectorDatabaseConfig;
 
-    public Retriever(EmbeddingService embeddingService, VectorDatabaseService vectorDatabaseService, TextChunkPoMapper textChunkPoMapper, FilePoMapper filePoMapper, PropertiesService propertiesService, VectorDatabaseConfig vectorDatabaseConfig) {
+    public Retriever(EmbeddingService embeddingService, VectorDatabaseService vectorDatabaseService, TextChunkPoMapper textChunkPoMapper, FilePoMapper filePoMapper, PropertiesService propertiesService) {
         this.embeddingService = embeddingService;
         this.vectorDatabaseService = vectorDatabaseService;
         this.textChunkPoMapper = textChunkPoMapper;
         this.filePoMapper = filePoMapper;
         this.propertiesService = propertiesService;
-        this.vectorDatabaseConfig = vectorDatabaseConfig;
     }
 
     /**
@@ -172,7 +169,7 @@ public class Retriever {
         Map<String, TextChunkPo> textChunkMap = textChunkPos.stream().collect(Collectors.toMap(TextChunkPo::getId, textChunkPo -> textChunkPo));
         for (EmbeddingModel.EmbeddingsQueryItem embeddingsQueryItem : embeddingsQueryItems) {
             String calculateExpressionResult = MathCalculatorUtil.calculateExpression(embeddingsQueryItem.getScore() + propertiesService.getProperty(PropertiesService.RETRIEVE_METRIC_SCORE_COMPARE_EXPR));
-            retrieveResult.add(Translator.translateToEmbeddingsQueryItemDto(embeddingsQueryItem, textChunkMap.get(embeddingsQueryItem.getTextChunkId()), !"true".equals(calculateExpressionResult), KnowledgeRetrieveItemDto.MetricTypeEnum.valueOf(propertiesService.getProperty(PropertiesService.RETRIEVE_METRIC_TYPE)), vectorDatabaseConfig.dimension));
+            retrieveResult.add(Translator.translateToEmbeddingsQueryItemDto(embeddingsQueryItem, textChunkMap.get(embeddingsQueryItem.getTextChunkId()), !"true".equals(calculateExpressionResult), KnowledgeRetrieveItemDto.MetricTypeEnum.valueOf(propertiesService.getProperty(PropertiesService.RETRIEVE_METRIC_TYPE)), embeddingService.getDimension()));
         }
         return retrieveResult;
     }

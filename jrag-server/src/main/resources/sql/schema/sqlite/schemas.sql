@@ -30,17 +30,18 @@ create table chat_context_record
 
 create table embeddings_item
 (
-    hash               char(40)    not null
+    hash                 char(40)    not null
         primary key,
-    embedding_model    varchar(32) not null,
-    embedding_provider varchar(32) not null,
-    text               text        not null,
-    embedding          text        not null,
-    text_chunk_id      char(40)    not null,
-    description        varchar(128),
-    create_time        bigint,
-    update_time        bigint,
-    create_user_id     varchar(32)
+    embedding_model      varchar(32) not null,
+    embedding_provider   varchar(32) not null,
+    check_embedding_hash varchar(32) not null,
+    text                 text        not null,
+    embedding            text        not null,
+    text_chunk_id        char(40)    not null,
+    description          varchar(128),
+    create_time          bigint,
+    update_time          bigint,
+    create_user_id       varchar(32)
 );
 
 create table file

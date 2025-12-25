@@ -6,7 +6,9 @@ import io.github.jerryt92.jrag.po.mgb.EmbeddingsItemPoWithBLOBs;
 import java.util.List;
 
 public interface VectorDatabaseService {
-    void init();
+    void reBuildVectorDatabase(int dimension);
+
+    void initData(List<EmbeddingsItemPoWithBLOBs> embeddingsItemPos);
 
     /**
      * 根据余弦相似度近似近邻（ANN）搜索

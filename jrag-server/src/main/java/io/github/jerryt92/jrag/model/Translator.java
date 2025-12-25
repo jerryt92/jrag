@@ -78,6 +78,7 @@ public final class Translator {
         }
         embeddingsItemPo.setEmbeddingModel(embeddingsItem.getEmbeddingModel());
         embeddingsItemPo.setEmbeddingProvider(embeddingsItem.getEmbeddingProvider());
+        embeddingsItemPo.setCheckEmbeddingHash(embeddingsItem.getCheckEmbeddingHash());
         embeddingsItemPo.setText(embeddingsItem.getText());
         embeddingsItemPo.setEmbedding(Arrays.toString(embeddingsItem.getEmbeddings()).replace("[", "").replace("]", ""));
         embeddingsItemPo.setTextChunkId(String.valueOf(textChunkId));

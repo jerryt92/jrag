@@ -38,17 +38,17 @@ create table chat_context_record
 DROP TABLE IF EXISTS embeddings_item;
 create table embeddings_item
 (
-    hash               char(40)     not null comment '嵌入text的哈希值（SHA-1），同时也作为唯一标识符'
-        primary key,
-    embedding_model    varchar(32)  not null comment '嵌入模型名称',
-    embedding_provider varchar(32)  not null comment '嵌入模型提供商名称',
-    text               text         not null comment '嵌入文本',
-    embedding          text         not null comment '嵌入向量',
-    text_chunk_id      char(40)     not null comment '文本块ID',
-    description        varchar(128) null comment '描述',
-    create_time        bigint       null comment '创建时间',
-    update_time        bigint       null comment '更新时间',
-    create_user_id     varchar(32)  null comment '创建者ID'
+    hash                 char(40)     not null comment '嵌入text的哈希值（SHA-1），同时也作为唯一标识符' primary key,
+    embedding_model      varchar(32)  not null comment '嵌入模型名称',
+    embedding_provider   varchar(32)  not null comment '嵌入模型提供商名称',
+    check_embedding_hash varchar(32)  not null comment '用于标记数据的嵌入模型是否一致，不一致则需要进行重新向量化',
+    text                 text         not null comment '嵌入文本',
+    embedding            text         not null comment '嵌入向量',
+    text_chunk_id        char(40)     not null comment '文本块ID',
+    description          varchar(128) null comment '描述',
+    create_time          bigint       null comment '创建时间',
+    update_time          bigint       null comment '更新时间',
+    create_user_id       varchar(32)  null comment '创建者ID'
 );
 
 DROP TABLE IF EXISTS file;
