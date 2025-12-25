@@ -37,11 +37,9 @@ public class VectorDatabaseConfig {
                 break;
             case "milvus-lite":
                 vectorDatabaseService = new MilvusLiteService(
-                        embeddingsItemPoMapper,
                         "http://localhost:29530",
                         milvusCollectionName,
                         milvusToken,
-                        dimension,
                         "COSINE"
                 );
                 break;

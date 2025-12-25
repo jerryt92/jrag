@@ -3,10 +3,8 @@ package io.github.jerryt92.jrag.service.rag.vdb.milvus;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
-import io.github.jerryt92.jrag.mapper.mgb.EmbeddingsItemPoMapper;
 import io.github.jerryt92.jrag.model.EmbeddingModel;
 import io.github.jerryt92.jrag.model.Translator;
-import io.github.jerryt92.jrag.po.mgb.EmbeddingsItemPoExample;
 import io.github.jerryt92.jrag.po.mgb.EmbeddingsItemPoWithBLOBs;
 import io.github.jerryt92.jrag.service.rag.vdb.VectorDatabaseService;
 import lombok.extern.slf4j.Slf4j;
@@ -23,25 +21,19 @@ import java.util.Map;
 
 @Slf4j
 public class MilvusLiteService implements VectorDatabaseService {
-    private final EmbeddingsItemPoMapper embeddingsItemPoMapper;
     private final String collectionName;
-    private final int dimension;
     private final String metricType;
 
     private final WebClient webClient;
     private final Gson gson; // 引入 Gson
 
     public MilvusLiteService(
-            EmbeddingsItemPoMapper embeddingsItemPoMapper,
             String clusterEndpoint,
             String collectionName,
             String token,
-            int dimension,
             String metricType
     ) {
-        this.embeddingsItemPoMapper = embeddingsItemPoMapper;
         this.collectionName = collectionName;
-        this.dimension = dimension;
         this.metricType = metricType;
         this.gson = new Gson(); // 初始化 Gson
 
@@ -55,30 +47,22 @@ public class MilvusLiteService implements VectorDatabaseService {
                 .build();
     }
 
+
     @Override
-    public void init() {
+    public void reBuildVectorDatabase(int dimension) {
         // 1. 构建 Schema
-        Map<String, Object> schemaPayload = buildSchemaPayload();
+        Map<String, Object> schemaPayload = buildSchemaPayload(dimension);
         sendRequest("/collections/create", schemaPayload);
         log.info("Collection {} created/rebuilt via Python API", collectionName);
-
-        // 2. 读取数据
-        List<EmbeddingsItemPoWithBLOBs> embeddingsItemPos = embeddingsItemPoMapper.selectByExampleWithBLOBs(new EmbeddingsItemPoExample());
-
-        // 3. 写入数据
-        if (!embeddingsItemPos.isEmpty()) {
-            putData(embeddingsItemPos);
-            log.info("Initialized collection {} with {} vectors", collectionName, embeddingsItemPos.size());
-        }
     }
 
-    private Map<String, Object> buildSchemaPayload() {
+    private Map<String, Object> buildSchemaPayload(int dimension) {
         List<Map<String, Object>> fields = new ArrayList<>();
         fields.add(Map.of("field_name", "hash", "data_type", "VarChar", "max_length", 40, "is_primary", true, "description", "SHA-1 Hash"));
         fields.add(Map.of("field_name", "embedding_model", "data_type", "VarChar", "max_length", 128));
         fields.add(Map.of("field_name", "embedding_provider", "data_type", "VarChar", "max_length", 128));
         fields.add(Map.of("field_name", "text", "data_type", "VarChar", "max_length", 4096));
-        fields.add(Map.of("field_name", "embedding", "data_type", "FloatVector", "dimension", this.dimension));
+        fields.add(Map.of("field_name", "embedding", "data_type", "FloatVector", "dimension", dimension));
         fields.add(Map.of("field_name", "text_chunk_id", "data_type", "VarChar", "max_length", 40));
         List<Map<String, Object>> indexes = new ArrayList<>();
         // FLAT 是最基础的索引类型，Milvus Lite 绝对支持
@@ -96,6 +80,16 @@ public class MilvusLiteService implements VectorDatabaseService {
         payload.put("indexes", indexes);
 
         return payload;
+    }
+
+    @Override
+    public void initData(List<EmbeddingsItemPoWithBLOBs> embeddingsItemPos) {
+
+        // 3. 写入数据
+        if (!embeddingsItemPos.isEmpty()) {
+            putData(embeddingsItemPos);
+            log.info("Initialized collection {} with {} vectors", collectionName, embeddingsItemPos.size());
+        }
     }
 
     @Override
