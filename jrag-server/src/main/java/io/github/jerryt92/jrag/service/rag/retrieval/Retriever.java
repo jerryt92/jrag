@@ -211,9 +211,7 @@ public class Retriever {
         Float[] referenceMaxScores = resolveReferenceMaxScores(referenceText, metricTypeStr, weights);
         Float denseScoreMax = referenceMaxScores[0];
         Float sparseScoreMax = resolveMaxSparseScore(embeddingsQueryItems);
-        Float l2MaxScore = metricType == null
-                ? null
-                : (metricType == KnowledgeRetrieveItemDto.MetricTypeEnum.L2 ? resolveMaxDenseScore(embeddingsQueryItems) : null);
+        Float l2MaxScore = metricType == KnowledgeRetrieveItemDto.MetricTypeEnum.L2 ? resolveMaxDenseScore(embeddingsQueryItems) : null;
         for (EmbeddingModel.EmbeddingsQueryItem embeddingsQueryItem : embeddingsQueryItems) {
             float densePercent = normalizeDenseScore(embeddingsQueryItem.getDenseScore(), metricType, denseScoreMax, l2MaxScore);
             float sparsePercent = normalizeSparseScore(embeddingsQueryItem.getSparseScore(), sparseScoreMax);
