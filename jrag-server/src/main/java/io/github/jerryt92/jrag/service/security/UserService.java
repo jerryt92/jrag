@@ -15,14 +15,16 @@ import java.util.List;
 public class UserService {
     private static final String ADMIN_USERNAME = "admin";
     private final UserPoMapper userPoMapper;
+    private final LoginService loginService;
 
-    public UserService(UserPoMapper userPoMapper) {
+    public UserService(UserPoMapper userPoMapper, LoginService loginService) {
         this.userPoMapper = userPoMapper;
+        this.loginService = loginService;
     }
 
     public List<UserPo> listUsers() {
         UserPoExample example = new UserPoExample();
-        example.setOrderByClause("create_time DESC");
+        example.setOrderByClause("CASE WHEN username = 'admin' THEN 0 ELSE 1 END, create_time DESC");
         return userPoMapper.selectByExample(example);
     }
 
@@ -64,6 +66,7 @@ public class UserService {
             throw new IllegalArgumentException("permission denied");
         }
         userPoMapper.deleteByPrimaryKey(userId);
+        loginService.invalidateUserSessions(userId);
     }
 
     public void updateRole(String userId, Integer role, SessionBo operator) {
@@ -73,6 +76,9 @@ public class UserService {
         UserPo target = userPoMapper.selectByPrimaryKey(userId);
         if (target == null) {
             throw new IllegalArgumentException("user not found");
+        }
+        if (ADMIN_USERNAME.equals(target.getUsername())) {
+            throw new IllegalArgumentException("admin user role cannot be modified");
         }
         if (!isAdminUser(operator)) {
             if (operator == null || operator.getRole() == null || operator.getRole() != 1) {
@@ -84,6 +90,7 @@ public class UserService {
         }
         target.setRole(role);
         userPoMapper.updateByPrimaryKeySelective(target);
+        loginService.invalidateUserSessions(userId);
     }
 
     public void updatePassword(String userId, String oldPassword, String newPassword, SessionBo operator) {
@@ -103,11 +110,13 @@ public class UserService {
         }
         if (isAdminUser(operator)) {
             updateUserPassword(target, newPassword);
+            loginService.invalidateUserSessions(target.getId());
             return;
         }
         if (operator != null && operator.getRole() != null && operator.getRole() == 1) {
             if (target.getRole() != null && target.getRole() >= 2) {
                 updateUserPassword(target, newPassword);
+                loginService.invalidateUserSessions(target.getId());
                 return;
             }
         }
@@ -119,6 +128,7 @@ public class UserService {
                 throw new IllegalArgumentException("old password is incorrect");
             }
             updateUserPassword(target, newPassword);
+            loginService.invalidateUserSessions(target.getId());
             return;
         }
         throw new IllegalArgumentException("permission denied");

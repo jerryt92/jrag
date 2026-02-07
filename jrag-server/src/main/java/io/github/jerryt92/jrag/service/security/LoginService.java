@@ -99,6 +99,18 @@ public class LoginService {
         SESSION_MAP.remove(sessionId);
     }
 
+    public void invalidateUserSessions(String userId) {
+        if (userId == null || userId.isBlank()) {
+            return;
+        }
+        for (Map.Entry<String, SessionBo> entry : SESSION_MAP.entrySet()) {
+            SessionBo sessionBo = entry.getValue();
+            if (sessionBo != null && userId.equals(sessionBo.getUserId())) {
+                SESSION_MAP.remove(entry.getKey());
+            }
+        }
+    }
+
     public boolean validateSession(String sessionId) {
         boolean result = false;
         SessionBo sessionBo = SESSION_MAP.get(sessionId);
