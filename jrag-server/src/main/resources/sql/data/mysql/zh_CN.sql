@@ -1,6 +1,9 @@
 INSERT INTO user (id, username, password_hash, create_time, role)
 VALUES ('a9e4a18b43ce44f2aece312667099a99', 'admin', '81279c81fe7d776409c3f1f3259b25ad3c055d3b78dc0fa29b463d7d73607c86',
         null, 1);
+INSERT INTO user (id, username, password_hash, create_time, role)
+VALUES ('3c0122c671b34137928aed221d5424fc', 'demo', '71346a6600bbc44255caa03d323e59e9b5deddb327917f8122fbb1fd5184161e',
+        null, 2);
 
 INSERT INTO ai_properties (property_name, property_value, description)
 VALUES ('RETRIEVE_TOP_K', '5', '检索结果最大数量');

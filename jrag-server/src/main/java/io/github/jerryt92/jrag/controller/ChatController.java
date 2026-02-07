@@ -2,6 +2,7 @@ package io.github.jerryt92.jrag.controller;
 
 import com.alibaba.fastjson2.JSONObject;
 import io.github.jerryt92.jrag.config.annotation.AutoRegisterWebSocketHandler;
+import io.github.jerryt92.jrag.config.annotation.RequiredRole;
 import io.github.jerryt92.jrag.model.ChatCallback;
 import io.github.jerryt92.jrag.model.ChatContextDto;
 import io.github.jerryt92.jrag.model.ChatRequestDto;
@@ -33,6 +34,7 @@ import java.util.Objects;
 @Log4j2
 @RestController
 @AutoRegisterWebSocketHandler(path = "/ws/rest/jrag/chat", allowedOrigin = "*")
+@RequiredRole(2)
 public class ChatController extends AbstractWebSocketHandler implements ChatApi {
     private final ChatContextService chatContextService;
     private final ChatService chatService;

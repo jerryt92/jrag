@@ -44,7 +44,7 @@ public class LoginService {
             noUserSession.setUserId(userPo.getId());
             noUserSession.setUsername(userPo.getUsername());
             noUserSession.setExpireTime(-1);
-            noUserSession.setRole(SessionBo.RoleEnum.fromValue(userPo.getRole()));
+            noUserSession.setRole(userPo.getRole());
         }
     }
 
@@ -70,7 +70,7 @@ public class LoginService {
             sessionBo.setUserId(userPo.getId());
             sessionBo.setUsername(userPo.getUsername());
             sessionBo.setExpireTime(System.currentTimeMillis() + 1000 * 60 * 60 * 24);
-            sessionBo.setRole(SessionBo.RoleEnum.fromValue(userPo.getRole()));
+            sessionBo.setRole(userPo.getRole());
             SESSION_MAP.put(sessionBo.getSessionId(), sessionBo);
             return sessionBo;
         } else {

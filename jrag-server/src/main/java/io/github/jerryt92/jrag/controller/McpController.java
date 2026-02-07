@@ -1,6 +1,7 @@
 package io.github.jerryt92.jrag.controller;
 
 import com.alibaba.fastjson2.JSONObject;
+import io.github.jerryt92.jrag.config.annotation.RequiredRole;
 import io.github.jerryt92.jrag.model.McpStatusItem;
 import io.github.jerryt92.jrag.server.api.McpApi;
 import io.github.jerryt92.jrag.service.llm.mcp.McpService;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
+@RequiredRole(1)
 public class McpController implements McpApi {
     private final McpService mcpService;
 

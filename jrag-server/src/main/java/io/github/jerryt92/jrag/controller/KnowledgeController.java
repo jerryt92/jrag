@@ -2,6 +2,7 @@ package io.github.jerryt92.jrag.controller;
 
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
+import io.github.jerryt92.jrag.config.annotation.RequiredRole;
 import io.github.jerryt92.jrag.model.ErrorResponseDto;
 import io.github.jerryt92.jrag.model.KnowledgeAddDto;
 import io.github.jerryt92.jrag.model.KnowledgeGetListDto;
@@ -32,6 +33,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
+@RequiredRole(1)
 public class KnowledgeController implements KnowledgeApi {
     private final KnowledgeService knowledgeService;
     private final Retriever retriever;

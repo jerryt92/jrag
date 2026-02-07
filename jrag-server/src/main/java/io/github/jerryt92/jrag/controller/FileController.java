@@ -2,6 +2,7 @@ package io.github.jerryt92.jrag.controller;
 
 import io.github.jerryt92.jrag.constants.CommonConstants;
 import io.github.jerryt92.jrag.constants.ErrorConstants;
+import io.github.jerryt92.jrag.config.annotation.RequiredRole;
 import io.github.jerryt92.jrag.model.FileBo;
 import io.github.jerryt92.jrag.model.FileDto;
 import io.github.jerryt92.jrag.model.Translator;
@@ -21,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @RestController
+@RequiredRole(1)
 public class FileController implements FileApi {
     private final FileService fileService;
 

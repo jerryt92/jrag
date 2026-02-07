@@ -4,8 +4,10 @@ import io.github.jerryt92.jrag.model.CheckApiResponse;
 import io.github.jerryt92.jrag.server.api.AiApiApi;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
+import io.github.jerryt92.jrag.config.annotation.RequiredRole;
 
 @RestController
+@RequiredRole(1)
 public class AiApiController implements AiApiApi {
 
     @Override
