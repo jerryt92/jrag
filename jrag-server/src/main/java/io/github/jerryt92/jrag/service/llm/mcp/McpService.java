@@ -2,6 +2,8 @@ package io.github.jerryt92.jrag.service.llm.mcp;
 
 import com.alibaba.fastjson2.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.jerryt92.jrag.model.McpStatusItem;
+import io.github.jerryt92.jrag.model.McpToolItem;
 import io.github.jerryt92.jrag.service.llm.tools.FunctionCallingService;
 import io.github.jerryt92.jrag.service.llm.tools.ToolInterface;
 import io.modelcontextprotocol.client.McpClient;
@@ -46,6 +48,7 @@ public class McpService {
     public Map<String, McpStdioClientProperties.Parameters> mcpStdioServerParameters = new ConcurrentHashMap<>();
     public Map<String, McpSyncClient> mcpName2Client = new ConcurrentHashMap<>();
     public Map<String, Set<String>> mcpClient2tools = new ConcurrentHashMap<>();
+    public Map<String, Map<String, String>> mcpClient2toolDescriptions = new ConcurrentHashMap<>();
     public Map<String, Map<String, String>> mcpHeaders = new ConcurrentHashMap<>();
     private final FunctionCallingService functionCallingService;
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(15L);
@@ -83,15 +86,15 @@ public class McpService {
         loadMcpServers(jsonText);
     }
 
-    public List<Map<String, Object>> getMcpServerStatus() {
+    public List<McpStatusItem> getMcpServerStatus() {
         Set<String> mcpServerNames = new HashSet<>();
         mcpServerNames.addAll(mcpSseServerParameters.keySet());
         mcpServerNames.addAll(mcpStreamableServerParameters.keySet());
         mcpServerNames.addAll(mcpStdioServerParameters.keySet());
-        List<Map<String, Object>> result = new ArrayList<>();
+        List<McpStatusItem> result = new ArrayList<>();
         for (String serverName : mcpServerNames) {
-            Map<String, Object> item = new HashMap<>();
-            item.put("name", serverName);
+            McpStatusItem item = new McpStatusItem();
+            item.setName(serverName);
             String type = "stdio";
             String endpoint = "";
             if (mcpSseServerParameters.containsKey(serverName)) {
@@ -107,9 +110,17 @@ public class McpService {
                 List<String> args = params.args() == null ? Collections.emptyList() : params.args();
                 endpoint = params.command() + (args.isEmpty() ? "" : " " + String.join(" ", args));
             }
-            item.put("type", type);
-            item.put("endpoint", endpoint.trim());
-            item.put("tools", mcpClient2tools.getOrDefault(serverName, Collections.emptySet()));
+            item.setType(type);
+            item.setEndpoint(endpoint.trim());
+            Map<String, String> toolDesc = mcpClient2toolDescriptions.getOrDefault(serverName, Collections.emptyMap());
+            List<McpToolItem> tools = new ArrayList<>();
+            for (Map.Entry<String, String> entry : toolDesc.entrySet()) {
+                McpToolItem toolItem = new McpToolItem();
+                toolItem.setName(entry.getKey());
+                toolItem.setDescription(entry.getValue());
+                tools.add(toolItem);
+            }
+            item.setTools(tools);
             McpSyncClient client = mcpName2Client.get(serverName);
             boolean online = client != null;
             if (online && !"stdio".equals(type)) {
@@ -119,7 +130,7 @@ public class McpService {
                     online = false;
                 }
             }
-            item.put("status", online ? "online" : "offline");
+            item.setStatus(online ? "online" : "offline");
             result.add(item);
         }
         return result;
@@ -257,6 +268,7 @@ public class McpService {
         mcpStdioServerParameters.clear();
         mcpName2Client.clear();
         mcpClient2tools.clear();
+        mcpClient2toolDescriptions.clear();
         mcpHeaders.clear();
     }
 
@@ -307,6 +319,7 @@ public class McpService {
                             .build())
                     .build();
             Set<String> tools = new HashSet<>();
+            Map<String, String> toolDescriptions = new HashMap<>();
             mcpSyncClient.initialize();
             // 将每个 mcp server 的 tool 添加到 toolName2mcpServerName 中
             McpSchema.ListToolsResult mcpTools = mcpSyncClient.listTools();
@@ -335,9 +348,11 @@ public class McpService {
                     functionCallingService.getTools().put(mcpTool.name(), toolInf);
                 }
                 tools.add(mcpTool.name());
+                toolDescriptions.put(mcpTool.name(), mcpTool.description());
             }
             mcpName2Client.put(mcpServerName, mcpSyncClient);
             mcpClient2tools.put(mcpServerName, tools);
+            mcpClient2toolDescriptions.put(mcpServerName, toolDescriptions);
             return tools;
         } catch (Exception e) {
             log.error("", e);

@@ -389,3 +389,32 @@ components:
         propertyValue:
           type: string
           description: 值
+    McpToolItem:
+      type: object
+      properties:
+        name:
+          type: string
+          description: 接口名称
+        description:
+          type: string
+          description: 接口描述
+    McpStatusItem:
+      type: object
+      properties:
+        name:
+          type: string
+          description: MCP 服务名称
+        type:
+          type: string
+          description: MCP 类型
+        endpoint:
+          type: string
+          description: MCP 接口地址或命令
+        status:
+          type: string
+          description: 在线状态
+        tools:
+          type: array
+          description: 接口列表
+          items:
+            $ref: '#/components/schemas/McpToolItem'
