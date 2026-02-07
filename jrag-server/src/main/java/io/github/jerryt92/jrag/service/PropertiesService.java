@@ -79,7 +79,10 @@ public class PropertiesService {
                 PropertiesPo propertiesPo = new PropertiesPo();
                 propertiesPo.setPropertyName(propertyDto.getPropertyName());
                 propertiesPo.setPropertyValue(propertyDto.getPropertyValue());
-                batchPropertiesPoMapper.updateByPrimaryKeySelective(propertiesPo);
+                int updated = batchPropertiesPoMapper.updateByPrimaryKeySelective(propertiesPo);
+                if (updated == 0) {
+                    batchPropertiesPoMapper.insertSelective(propertiesPo);
+                }
                 properties.put(propertyDto.getPropertyName(), propertyDto.getPropertyValue());
             }
             sqlSession.commit();

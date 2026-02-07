@@ -6,11 +6,13 @@ import io.github.jerryt92.jrag.service.PropertiesService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
+import io.github.jerryt92.jrag.config.annotation.RequiredRole;
 
 import java.util.List;
 import java.util.Map;
 
 @RestController
+@RequiredRole(1)
 public class PropertyController implements PropertyApi {
     private final PropertiesService propertiesService;
 

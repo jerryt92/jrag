@@ -1,7 +1,7 @@
 services:
   init-config:
     image: alpine:3.20
-    command: ["/bin/sh", "/init/init-config.sh"]
+    command: [ "/bin/sh", "/init/init-config.sh" ]
     environment:
       JRAG_BASE_DIR: /root/jrag
     volumes:
@@ -12,7 +12,7 @@ services:
 
   milvus:
     image: milvusdb/milvus:v2.6.9
-    command: ["milvus", "run", "standalone"]
+    command: [ "milvus", "run", "standalone" ]
     depends_on:
       init-config:
         condition: service_completed_successfully
@@ -33,7 +33,7 @@ services:
       - ${HOME}/jrag/milvus/embedEtcd.yaml:/milvus/configs/embedEtcd.yaml
       - ${HOME}/jrag/milvus/user.yaml:/milvus/configs/user.yaml
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9091/healthz"]
+      test: [ "CMD-SHELL", "curl -f http://localhost:9091/healthz" ]
       interval: 30s
       start_period: 90s
       timeout: 20s
@@ -57,9 +57,11 @@ services:
     environment:
       JRAG_CONFIG_PATH: /config/
       JRAG_BASE_DIR: /root/jrag
+      MCP_CONFIG_PATH: /jrag/mcp/mcp.json
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
       - ${HOME}/jrag/config:/config:ro
       - ${HOME}/jrag/logs:/opt/jrag/logs
       - ${HOME}/jrag:/root/jrag
+      - ${HOME}/jrag/mcp:/jrag/mcp

@@ -241,7 +241,7 @@ public class KnowledgeService {
             TextChunkPoExample textChunkPoExample = new TextChunkPoExample();
             TextChunkPoExample.Criteria criteria = textChunkPoExample.createCriteria();
             criteria.andIdIn(textChunkIds);
-            if (!sessionBo.getRole().equals(SessionBo.RoleEnum.ADMIN)) {
+            if (!sessionBo.isAdmin()) {
                 // 非管理员只能删除自己创建的
                 criteria.andCreateUserIdEqualTo(sessionBo.getUserId());
             }

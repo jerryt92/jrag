@@ -8,8 +8,10 @@ import io.github.jerryt92.jrag.service.embedding.EmbeddingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
+import io.github.jerryt92.jrag.config.annotation.RequiredRole;
 
 @RestController
+@RequiredRole(1)
 public class EmbeddingsController implements EmbeddingApi {
     @Autowired
     private EmbeddingService embeddingService;

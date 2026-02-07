@@ -44,7 +44,7 @@ public class LoginService {
             noUserSession.setUserId(userPo.getId());
             noUserSession.setUsername(userPo.getUsername());
             noUserSession.setExpireTime(-1);
-            noUserSession.setRole(SessionBo.RoleEnum.fromValue(userPo.getRole()));
+            noUserSession.setRole(userPo.getRole());
         }
     }
 
@@ -70,7 +70,7 @@ public class LoginService {
             sessionBo.setUserId(userPo.getId());
             sessionBo.setUsername(userPo.getUsername());
             sessionBo.setExpireTime(System.currentTimeMillis() + 1000 * 60 * 60 * 24);
-            sessionBo.setRole(SessionBo.RoleEnum.fromValue(userPo.getRole()));
+            sessionBo.setRole(userPo.getRole());
             SESSION_MAP.put(sessionBo.getSessionId(), sessionBo);
             return sessionBo;
         } else {
@@ -97,6 +97,18 @@ public class LoginService {
 
     public void logout(String sessionId) {
         SESSION_MAP.remove(sessionId);
+    }
+
+    public void invalidateUserSessions(String userId) {
+        if (userId == null || userId.isBlank()) {
+            return;
+        }
+        for (Map.Entry<String, SessionBo> entry : SESSION_MAP.entrySet()) {
+            SessionBo sessionBo = entry.getValue();
+            if (sessionBo != null && userId.equals(sessionBo.getUserId())) {
+                SESSION_MAP.remove(entry.getKey());
+            }
+        }
     }
 
     public boolean validateSession(String sessionId) {

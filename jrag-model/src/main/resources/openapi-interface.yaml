@@ -10,10 +10,13 @@ servers:
 tags:
   - name: HealthCheck
   - name: Login
+  - name: Session
+  - name: User
   - name: Embedding
   - name: File
   - name: Knowledge
   - name: QaTemplate
+  - name: MCP
 paths:
   # HealthCheck API
   /v1/api/jrag/health-check:
@@ -58,6 +61,95 @@ paths:
       summary: do logout.
       description: do logout.
       operationId: logout
+      responses:
+        '200':
+          description: OK
+  /v1/rest/jrag/session:
+    get:
+      tags: [ Session ]
+      summary: 获取当前会话信息
+      description: 获取当前会话信息
+      operationId: getSessionInfo
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './openapi-model.yaml#/components/schemas/SessionInfoDto'
+  /v1/rest/jrag/users:
+    get:
+      tags: [ User ]
+      summary: 获取用户列表
+      description: 获取用户列表
+      operationId: getUserList
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './openapi-model.yaml#/components/schemas/UserListDto'
+    post:
+      tags: [ User ]
+      summary: 创建用户
+      description: 创建用户
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './openapi-model.yaml#/components/schemas/UserCreateRequestDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './openapi-model.yaml#/components/schemas/UserDto'
+    delete:
+      tags: [ User ]
+      summary: 删除用户
+      description: 删除用户
+      operationId: deleteUser
+      parameters:
+        - in: query
+          name: user-id
+          schema:
+            type: string
+          required: true
+          description: 用户ID
+      responses:
+        '200':
+          description: OK
+  /v1/rest/jrag/users/role:
+    put:
+      tags: [ User ]
+      summary: 修改用户角色
+      description: 修改用户角色
+      operationId: updateUserRole
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './openapi-model.yaml#/components/schemas/UserRoleUpdateRequestDto'
+      responses:
+        '200':
+          description: OK
+  /v1/rest/jrag/users/password:
+    put:
+      tags: [ User ]
+      summary: 修改用户密码
+      description: 修改用户密码
+      operationId: updateUserPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './openapi-model.yaml#/components/schemas/UserPasswordUpdateRequestDto'
       responses:
         '200':
           description: OK
@@ -385,6 +477,48 @@ paths:
       responses:
         '200':
           description: OK
+  /v1/rest/jrag/mcp/config:
+    get:
+      tags: [ MCP ]
+      summary: 获取 MCP 配置
+      description: 获取 MCP 配置
+      operationId: getMcpConfig
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    put:
+      tags: [ MCP ]
+      summary: 保存 MCP 配置
+      description: 保存 MCP 配置
+      operationId: updateMcpConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+  /v1/rest/jrag/mcp/status:
+    get:
+      tags: [ MCP ]
+      summary: 获取 MCP 服务器状态
+      description: 获取 MCP 服务器状态与接口
+      operationId: getMcpStatus
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: './openapi-model.yaml#/components/schemas/McpStatusItem'
   /v1/rest/jrag/knowledge/markdown:
     post:
       tags: [ MarkdownProcessor ]

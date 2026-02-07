@@ -85,5 +85,5 @@ create table user
     username      varchar(64) not null,
     password_hash char(64)    not null comment '密码哈希值',
     create_time   bigint      null,
-    role          int         null comment '0-普通用户, 1-管理员'
+    role          int         null comment '1-管理员, 2-普通用户'
 );

@@ -1,6 +1,7 @@
 package io.github.jerryt92.jrag.controller;
 
 import com.alibaba.fastjson2.JSONObject;
+import io.github.jerryt92.jrag.config.annotation.RequiredRole;
 import io.github.jerryt92.jrag.constants.CommonConstants;
 import io.github.jerryt92.jrag.model.QaTemplateItem;
 import io.github.jerryt92.jrag.model.QaTemplateList;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
+@RequiredRole(2)
 public class QaTemplateController implements QaTemplateApi {
     final HttpServletRequest httpServletRequest;
 
