@@ -153,6 +153,22 @@ public class Retriever {
                 weights[0],
                 weights[1]
         );
+        String referenceText = resolveReferenceText(embeddingsQueryItems, Collections.emptyMap(), queryText);
+        Float[] referenceMaxScores = resolveReferenceMaxScores(referenceText, metricType == null ? null : metricType.name(), weights);
+        Float denseScoreMax = referenceMaxScores[0];
+        Float sparseScoreMax = resolveMaxSparseScore(embeddingsQueryItems);
+        Float l2MaxScore = metricType == KnowledgeRetrieveItemDto.MetricTypeEnum.L2
+                ? resolveMaxDenseScore(embeddingsQueryItems)
+                : null;
+        for (EmbeddingModel.EmbeddingsQueryItem embeddingsQueryItem : embeddingsQueryItems) {
+            float densePercent = normalizeDenseScore(embeddingsQueryItem.getDenseScore(), metricType, denseScoreMax, l2MaxScore);
+            float sparsePercent = normalizeSparseScore(embeddingsQueryItem.getSparseScore(), sparseScoreMax);
+            float hybridPercent = clampPercent(densePercent * weights[0] + sparsePercent * weights[1]);
+            embeddingsQueryItem.setDenseScore(densePercent)
+                    .setSparseScore(sparsePercent)
+                    .setHybridScore(hybridPercent)
+                    .setScore(hybridPercent);
+        }
         List<EmbeddingModel.EmbeddingsQueryItem> result = new ArrayList<>();
         for (EmbeddingModel.EmbeddingsQueryItem embeddingsQueryItem : embeddingsQueryItems) {
             String calculateExpressionResult = MathCalculatorUtil.calculateExpression(embeddingsQueryItem.getScore() + metricScoreCompareExpr);
@@ -168,6 +184,8 @@ public class Retriever {
         if (StringUtils.isBlank(queryText)) {
             return retrieveResult;
         }
+        String metricTypeStr = propertiesService.getProperty(PropertiesService.RETRIEVE_METRIC_TYPE);
+        KnowledgeRetrieveItemDto.MetricTypeEnum metricType = KnowledgeRetrieveItemDto.MetricTypeEnum.valueOf(metricTypeStr);
         // 向量化
         EmbeddingModel.EmbeddingsRequest embeddingsRequest = new EmbeddingModel.EmbeddingsRequest()
                 .setInput(Collections.singletonList(queryText));
@@ -180,7 +198,7 @@ public class Retriever {
                 queryText,
                 embed.getData().getFirst().getEmbeddings(),
                 topK,
-                propertiesService.getProperty(PropertiesService.RETRIEVE_METRIC_TYPE),
+                metricTypeStr,
                 weights[0],
                 weights[1]
         );
@@ -189,9 +207,23 @@ public class Retriever {
         textChunkPoExample.createCriteria().andIdIn(textChunkIds);
         List<TextChunkPo> textChunkPos = textChunkIds.isEmpty() ? Collections.emptyList() : textChunkPoMapper.selectByExampleWithBLOBs(textChunkPoExample);
         Map<String, TextChunkPo> textChunkMap = textChunkPos.stream().collect(Collectors.toMap(TextChunkPo::getId, textChunkPo -> textChunkPo));
+        String referenceText = resolveReferenceText(embeddingsQueryItems, textChunkMap, queryText);
+        Float[] referenceMaxScores = resolveReferenceMaxScores(referenceText, metricTypeStr, weights);
+        Float denseScoreMax = referenceMaxScores[0];
+        Float sparseScoreMax = resolveMaxSparseScore(embeddingsQueryItems);
+        Float l2MaxScore = metricType == null
+                ? null
+                : (metricType == KnowledgeRetrieveItemDto.MetricTypeEnum.L2 ? resolveMaxDenseScore(embeddingsQueryItems) : null);
         for (EmbeddingModel.EmbeddingsQueryItem embeddingsQueryItem : embeddingsQueryItems) {
+            float densePercent = normalizeDenseScore(embeddingsQueryItem.getDenseScore(), metricType, denseScoreMax, l2MaxScore);
+            float sparsePercent = normalizeSparseScore(embeddingsQueryItem.getSparseScore(), sparseScoreMax);
+            float hybridPercent = clampPercent(densePercent * weights[0] + sparsePercent * weights[1]);
+            embeddingsQueryItem.setDenseScore(densePercent)
+                    .setSparseScore(sparsePercent)
+                    .setHybridScore(hybridPercent)
+                    .setScore(hybridPercent);
             String calculateExpressionResult = MathCalculatorUtil.calculateExpression(embeddingsQueryItem.getScore() + propertiesService.getProperty(PropertiesService.RETRIEVE_METRIC_SCORE_COMPARE_EXPR));
-            retrieveResult.add(Translator.translateToEmbeddingsQueryItemDto(embeddingsQueryItem, textChunkMap.get(embeddingsQueryItem.getTextChunkId()), !"true".equals(calculateExpressionResult), KnowledgeRetrieveItemDto.MetricTypeEnum.valueOf(propertiesService.getProperty(PropertiesService.RETRIEVE_METRIC_TYPE)), embeddingService.getDimension()));
+            retrieveResult.add(Translator.translateToEmbeddingsQueryItemDto(embeddingsQueryItem, textChunkMap.get(embeddingsQueryItem.getTextChunkId()), !"true".equals(calculateExpressionResult), metricType, embeddingService.getDimension()));
         }
         return retrieveResult;
     }
@@ -225,6 +257,145 @@ public class Retriever {
         }
         if (value > 1f) {
             return 1f;
+        }
+        return value;
+    }
+
+    private String resolveReferenceText(List<EmbeddingModel.EmbeddingsQueryItem> embeddingsQueryItems,
+                                        Map<String, TextChunkPo> textChunkMap,
+                                        String fallbackText) {
+        if (embeddingsQueryItems == null || embeddingsQueryItems.isEmpty()) {
+            return fallbackText;
+        }
+        EmbeddingModel.EmbeddingsQueryItem firstItem = embeddingsQueryItems.get(0);
+        if (textChunkMap != null && firstItem != null && StringUtils.isNotBlank(firstItem.getTextChunkId())) {
+            TextChunkPo textChunkPo = textChunkMap.get(firstItem.getTextChunkId());
+            if (textChunkPo != null && StringUtils.isNotBlank(textChunkPo.getTextChunk())) {
+                return textChunkPo.getTextChunk();
+            }
+        }
+        if (firstItem != null && StringUtils.isNotBlank(firstItem.getText())) {
+            return firstItem.getText();
+        }
+        return fallbackText;
+    }
+
+    private Float[] resolveReferenceMaxScores(String referenceText, String metricType, float[] weights) {
+        if (StringUtils.isBlank(referenceText)) {
+            return new Float[]{null, null};
+        }
+        EmbeddingModel.EmbeddingsRequest embeddingsRequest = new EmbeddingModel.EmbeddingsRequest()
+                .setInput(Collections.singletonList(referenceText));
+        EmbeddingModel.EmbeddingsResponse embed = embeddingService.embed(embeddingsRequest);
+        if (embed.getData().isEmpty()) {
+            return new Float[]{null, null};
+        }
+        List<EmbeddingModel.EmbeddingsQueryItem> referenceItems = vectorDatabaseService.hybridRetrieval(
+                referenceText,
+                embed.getData().getFirst().getEmbeddings(),
+                1,
+                metricType,
+                weights[0],
+                weights[1]
+        );
+        if (referenceItems.isEmpty()) {
+            return new Float[]{null, null};
+        }
+        EmbeddingModel.EmbeddingsQueryItem referenceItem = referenceItems.get(0);
+        return new Float[]{referenceItem.getDenseScore(), referenceItem.getSparseScore()};
+    }
+
+    private float normalizeDenseScore(Float value, KnowledgeRetrieveItemDto.MetricTypeEnum metricType, Float denseMax, Float l2Max) {
+        if (value == null) {
+            return 0f;
+        }
+        if (metricType == null) {
+            // 未知指标时，按最大值线性归一化到 0-100
+            return normalizeByMax(value, denseMax);
+        }
+        switch (metricType) {
+            case IP:
+            case COSINE:
+                // IP/COSINE 原始范围 [-1, 1]，线性映射到 [0, 100]
+                return clampPercent(((value + 1f) / 2f) * 100f);
+            case JACCARD:
+                // JACCARD 原始范围 [0, 1]，线性映射到 [0, 100]
+                return clampPercent(value * 100f);
+            case L2:
+            default:
+                // L2 距离越小越相似，使用指数衰减并确保最远距离归一为 0
+                return normalizeL2Score(value, l2Max);
+        }
+    }
+
+    private float normalizeSparseScore(Float value, Float sparseMax) {
+        // 稀疏向量（BM25）以当前结果集中最大分数为基准，线性归一化到 0-100
+        return normalizeByMax(value, sparseMax);
+    }
+
+    private float normalizeByMax(Float value, Float maxValue) {
+        // 线性归一化：value / max * 100，max 为空或 <=0 时返回 0
+        if (value == null) {
+            return 0f;
+        }
+        if (maxValue == null || maxValue <= 0f) {
+            return 0f;
+        }
+        return clampPercent((value / maxValue) * 100f);
+    }
+
+    private float normalizeL2Score(Float value, Float maxValue) {
+        // 指数衰减归一化：最远距离为 0 分，距离越小分数越高
+        if (value == null) {
+            return 0f;
+        }
+        if (maxValue == null || maxValue <= 0f) {
+            return value <= 0f ? 100f : 0f;
+        }
+        float ratio = value / maxValue;
+        if (ratio < 0f) {
+            ratio = 0f;
+        }
+        float expMax = (float) Math.exp(-1f);
+        float expValue = (float) Math.exp(-ratio);
+        float normalized = (expValue - expMax) / (1f - expMax);
+        return clampPercent(normalized * 100f);
+    }
+
+    private Float resolveMaxDenseScore(List<EmbeddingModel.EmbeddingsQueryItem> embeddingsQueryItems) {
+        if (embeddingsQueryItems == null || embeddingsQueryItems.isEmpty()) {
+            return null;
+        }
+        Float maxScore = null;
+        for (EmbeddingModel.EmbeddingsQueryItem item : embeddingsQueryItems) {
+            Float score = item == null ? null : item.getDenseScore();
+            if (score != null) {
+                maxScore = maxScore == null ? score : Math.max(maxScore, score);
+            }
+        }
+        return maxScore;
+    }
+
+    private Float resolveMaxSparseScore(List<EmbeddingModel.EmbeddingsQueryItem> embeddingsQueryItems) {
+        if (embeddingsQueryItems == null || embeddingsQueryItems.isEmpty()) {
+            return null;
+        }
+        Float maxScore = null;
+        for (EmbeddingModel.EmbeddingsQueryItem item : embeddingsQueryItems) {
+            Float score = item == null ? null : item.getSparseScore();
+            if (score != null) {
+                maxScore = maxScore == null ? score : Math.max(maxScore, score);
+            }
+        }
+        return maxScore;
+    }
+
+    private float clampPercent(float value) {
+        if (value < 0f) {
+            return 0f;
+        }
+        if (value > 100f) {
+            return 100f;
         }
         return value;
     }
