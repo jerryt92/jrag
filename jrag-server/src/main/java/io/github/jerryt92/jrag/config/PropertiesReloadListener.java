@@ -19,7 +19,8 @@ public class PropertiesReloadListener {
     public PropertiesReloadListener(LlmProperties llmProperties,
                                     EmbeddingProperties embeddingProperties,
                                     DynamicLlmClient dynamicLlmClient,
-                                    EmbeddingService embeddingService, VectorDatabaseInit vectorDatabaseInit) {
+                                    EmbeddingService embeddingService,
+                                    VectorDatabaseInit vectorDatabaseInit) {
         this.llmProperties = llmProperties;
         this.embeddingProperties = embeddingProperties;
         this.dynamicLlmClient = dynamicLlmClient;
