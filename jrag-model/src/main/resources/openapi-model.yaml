@@ -43,6 +43,77 @@ components:
         hash:
           type: string
           description: 验证码Hash
+    SessionInfoDto:
+      type: object
+      properties:
+        userId:
+          type: string
+          description: 用户ID
+        username:
+          type: string
+          description: 用户名
+        role:
+          type: integer
+          description: 用户角色
+    UserDto:
+      type: object
+      properties:
+        userId:
+          type: string
+          description: 用户ID
+        username:
+          type: string
+          description: 用户名
+        role:
+          type: integer
+          description: 用户角色
+        createTime:
+          type: integer
+          format: int64
+          description: 创建时间
+    UserListDto:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserDto'
+    UserCreateRequestDto:
+      type: object
+      properties:
+        username:
+          type: string
+          description: 用户名
+        password:
+          type: string
+          format: password
+          description: 密码
+        role:
+          type: integer
+          description: 用户角色
+    UserRoleUpdateRequestDto:
+      type: object
+      properties:
+        userId:
+          type: string
+          description: 用户ID
+        role:
+          type: integer
+          description: 用户角色
+    UserPasswordUpdateRequestDto:
+      type: object
+      properties:
+        userId:
+          type: string
+          description: 用户ID（管理员/角色1修改其他用户时需要）
+        oldPassword:
+          type: string
+          format: password
+          description: 旧密码（用户修改自身密码时需要）
+        newPassword:
+          type: string
+          format: password
+          description: 新密码
     SlideCaptchaResp:
       type: object
       description: 滑动验证码

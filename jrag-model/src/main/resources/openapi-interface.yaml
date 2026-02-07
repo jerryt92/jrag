@@ -10,6 +10,8 @@ servers:
 tags:
   - name: HealthCheck
   - name: Login
+  - name: Session
+  - name: User
   - name: Embedding
   - name: File
   - name: Knowledge
@@ -59,6 +61,95 @@ paths:
       summary: do logout.
       description: do logout.
       operationId: logout
+      responses:
+        '200':
+          description: OK
+  /v1/rest/jrag/session:
+    get:
+      tags: [ Session ]
+      summary: 获取当前会话信息
+      description: 获取当前会话信息
+      operationId: getSessionInfo
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './openapi-model.yaml#/components/schemas/SessionInfoDto'
+  /v1/rest/jrag/users:
+    get:
+      tags: [ User ]
+      summary: 获取用户列表
+      description: 获取用户列表
+      operationId: getUserList
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './openapi-model.yaml#/components/schemas/UserListDto'
+    post:
+      tags: [ User ]
+      summary: 创建用户
+      description: 创建用户
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './openapi-model.yaml#/components/schemas/UserCreateRequestDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './openapi-model.yaml#/components/schemas/UserDto'
+    delete:
+      tags: [ User ]
+      summary: 删除用户
+      description: 删除用户
+      operationId: deleteUser
+      parameters:
+        - in: query
+          name: user-id
+          schema:
+            type: string
+          required: true
+          description: 用户ID
+      responses:
+        '200':
+          description: OK
+  /v1/rest/jrag/users/role:
+    put:
+      tags: [ User ]
+      summary: 修改用户角色
+      description: 修改用户角色
+      operationId: updateUserRole
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './openapi-model.yaml#/components/schemas/UserRoleUpdateRequestDto'
+      responses:
+        '200':
+          description: OK
+  /v1/rest/jrag/users/password:
+    put:
+      tags: [ User ]
+      summary: 修改用户密码
+      description: 修改用户密码
+      operationId: updateUserPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './openapi-model.yaml#/components/schemas/UserPasswordUpdateRequestDto'
       responses:
         '200':
           description: OK
