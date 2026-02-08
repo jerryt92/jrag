@@ -83,7 +83,7 @@ public class McpService {
         }
         String jsonText = JSONObject.toJSONString(config);
         persistMcpJson(jsonText);
-        loadMcpServers(jsonText);
+        Thread.startVirtualThread(() -> loadMcpServers(jsonText));
     }
 
     public List<McpStatusItem> getMcpServerStatus() {
