@@ -5,11 +5,13 @@ import io.github.jerryt92.jrag.model.ChatCallback;
 import io.github.jerryt92.jrag.model.ChatModel;
 import io.github.jerryt92.jrag.model.FunctionCallingModel;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.ai.ollama.api.OllamaApi;
 import org.springframework.ai.ollama.api.OllamaChatOptions;
 import org.springframework.ai.model.ModelOptionsUtils;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.netty.http.HttpProtocol;
@@ -35,10 +37,14 @@ public class OllamaClient extends LlmClient {
 
     public OllamaClient(LlmProperties llmProperties) {
         super(llmProperties);
+        WebClient.Builder webClientBuilder = WebClient.builder()
+                .clientConnector(new ReactorClientHttpConnector(HttpClient.create().protocol(HttpProtocol.HTTP11)));
+        if (StringUtils.isNotBlank(llmProperties.ollamaKey)) {
+            webClientBuilder.defaultHeader("Authorization", "Bearer " + llmProperties.ollamaKey);
+        }
         this.ollamaApi = OllamaApi.builder()
                 .baseUrl(llmProperties.ollamaBaseUrl)
-                .webClientBuilder(org.springframework.web.reactive.function.client.WebClient.builder()
-                        .clientConnector(new ReactorClientHttpConnector(HttpClient.create().protocol(HttpProtocol.HTTP11))))
+                .webClientBuilder(webClientBuilder)
                 .build();
     }
 

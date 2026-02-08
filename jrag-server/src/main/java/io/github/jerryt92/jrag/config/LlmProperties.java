@@ -15,6 +15,7 @@ public class LlmProperties {
     public String ollamaBaseUrl;
     public int ollamaKeepAliveSeconds;
     public int ollamaContextLength;
+    public String ollamaKey;
     public String openAiModelName;
     public String completionsPath;
     public String openAiBaseUrl;
@@ -33,6 +34,7 @@ public class LlmProperties {
     private static final String KEY_OLLAMA_BASE_URL = "llm-ollama-base-url";
     private static final String KEY_OLLAMA_KEEP_ALIVE_SECONDS = "llm-ollama-keep-alive-seconds";
     private static final String KEY_OLLAMA_CONTEXT_LENGTH = "llm-ollama-context-length";
+    private static final String KEY_OLLAMA_KEY = "llm-ollama-key";
     private static final String KEY_OPEN_AI_MODEL_NAME = "llm-open-ai-model-name";
     private static final String KEY_OPEN_AI_BASE_URL = "llm-open-ai-base-url";
     private static final String KEY_OPEN_AI_COMPLETIONS_PATH = "llm-open-ai-completions-path";
@@ -62,6 +64,7 @@ public class LlmProperties {
         this.ollamaBaseUrl = readString(KEY_OLLAMA_BASE_URL, "http://172.16.8.107:11434");
         this.ollamaKeepAliveSeconds = readInt(KEY_OLLAMA_KEEP_ALIVE_SECONDS, 3600);
         this.ollamaContextLength = readInt(KEY_OLLAMA_CONTEXT_LENGTH, 32768);
+        this.ollamaKey = readString(KEY_OLLAMA_KEY, "");
 
         this.openAiModelName = readString(KEY_OPEN_AI_MODEL_NAME, "qwen-plus");
         this.openAiBaseUrl = readString(KEY_OPEN_AI_BASE_URL, "https://dashscope.aliyuncs.com");

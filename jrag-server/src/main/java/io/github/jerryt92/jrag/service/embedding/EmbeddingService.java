@@ -9,6 +9,7 @@ import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.ai.ollama.api.OllamaApi;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,9 +81,10 @@ public class EmbeddingService {
                     break;
                 case "ollama":
                 default:
-                    webClient = builder
-                            .baseUrl(embeddingProperties.ollamaBaseUrl)
-                            .build();
+                    if (StringUtils.isNotBlank(embeddingProperties.ollamaKey)) {
+                        builder.defaultHeader("Authorization", "Bearer " + embeddingProperties.ollamaKey);
+                    }
+                    webClient = builder.baseUrl(embeddingProperties.ollamaBaseUrl).build();
                     embeddingsPath = "/api/embed";
                     break;
             }
