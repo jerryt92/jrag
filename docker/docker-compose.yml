@@ -41,9 +41,11 @@ services:
 
   jrag:
     image: jrag:${TAG:-latest}
+    pull_policy: build
     build:
       context: ..
       dockerfile: docker/Dockerfile
+      no_cache: false
       args:
         UPDATE_UI: ${UPDATE_UI:-true}
         JRAG_UI_REPO: ${JRAG_UI_REPO:-https://github.com/jerryt92/jrag-ui.git}
