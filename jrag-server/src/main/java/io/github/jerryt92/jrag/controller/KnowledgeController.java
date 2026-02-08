@@ -24,6 +24,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -144,8 +146,11 @@ public class KnowledgeController implements KnowledgeApi {
                 knowledgeAddDtoList.add(knowledgeAddDto);
             }
             knowledgeService.putKnowledge(knowledgeAddDtoList, loginService.getSession());
+        } catch (WebClientResponseException | WebClientRequestException e) {
+            throw e;
         } catch (Throwable t) {
             log.error("", t);
+            return ResponseEntity.internalServerError().body(new ErrorResponseDto().message(t.getMessage()));
         }
         return ResponseEntity.ok().build();
     }

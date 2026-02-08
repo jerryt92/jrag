@@ -9,6 +9,7 @@ import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.ai.ollama.api.OllamaApi;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.netty.http.client.HttpClient;
 
@@ -80,9 +82,10 @@ public class EmbeddingService {
                     break;
                 case "ollama":
                 default:
-                    webClient = builder
-                            .baseUrl(embeddingProperties.ollamaBaseUrl)
-                            .build();
+                    if (StringUtils.isNotBlank(embeddingProperties.ollamaKey)) {
+                        builder.defaultHeader("Authorization", "Bearer " + embeddingProperties.ollamaKey);
+                    }
+                    webClient = builder.baseUrl(embeddingProperties.ollamaBaseUrl).build();
                     embeddingsPath = "/api/embed";
                     break;
             }
@@ -102,6 +105,8 @@ public class EmbeddingService {
             } else {
                 log.warn("Init failed: Unable to fetch embedding for test input.");
             }
+        } catch (WebClientResponseException | WebClientRequestException e) {
+            log.warn("Init failed: Embedding service unavailable.", e);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
@@ -109,21 +114,14 @@ public class EmbeddingService {
 
     public EmbeddingModel.EmbeddingsResponse embed(EmbeddingModel.EmbeddingsRequest embeddingsRequest) {
         List<EmbeddingModel.EmbeddingsItem> embeddingsItems = new ArrayList<>();
-        try {
-            switch (embeddingProperties.embeddingProvider) {
-                case "open-ai":
-                    handleOpenAIEmbeddings(embeddingsRequest, embeddingsItems);
-                    break;
-                case "ollama":
-                default:
-                    handleOllamaEmbeddings(embeddingsRequest, embeddingsItems);
-                    break;
-            }
-        } catch (WebClientResponseException e) {
-            log.error("{} API 返回错误状态码: {}, Body: {}",
-                    embeddingProperties.embeddingProvider, e.getStatusCode(), e.getResponseBodyAsString());
-        } catch (Exception e) {
-            log.error("调用嵌入模型失败: Provider={}", embeddingProperties.embeddingProvider, e);
+        switch (embeddingProperties.embeddingProvider) {
+            case "open-ai":
+                handleOpenAIEmbeddings(embeddingsRequest, embeddingsItems);
+                break;
+            case "ollama":
+            default:
+                handleOllamaEmbeddings(embeddingsRequest, embeddingsItems);
+                break;
         }
 
         return new EmbeddingModel.EmbeddingsResponse().setData(embeddingsItems);

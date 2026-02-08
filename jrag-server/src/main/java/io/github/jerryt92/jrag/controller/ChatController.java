@@ -20,8 +20,11 @@ import io.github.jerryt92.jrag.service.security.LoginService;
 import io.github.jerryt92.jrag.utils.UUIDUtil;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -109,9 +112,19 @@ public class ChatController extends AbstractWebSocketHandler implements ChatApi 
         innerChatChatCallback.errorCall = t -> {
             try {
                 ChatResponseDto errorResponse = new ChatResponseDto().done(true).error(true);
-                if (t instanceof org.springframework.web.reactive.function.client.WebClientResponseException ex) {
+                if (t instanceof WebClientResponseException ex) {
                     errorResponse.setErrorCode(String.valueOf(ex.getStatusCode().value()));
-                    errorResponse.setErrorMessage(ex.getResponseBodyAsString());
+                    String responseBodyAsString = ex.getResponseBodyAsString();
+                    if (StringUtils.isBlank(responseBodyAsString)) {
+                        responseBodyAsString = ex.getStatusText();
+                    }
+                    if (StringUtils.isBlank(responseBodyAsString)) {
+                        responseBodyAsString = ex.getMessage();
+                    }
+                    errorResponse.setErrorMessage(responseBodyAsString);
+                } else if (t instanceof WebClientRequestException ex) {
+                    errorResponse.setErrorCode(HttpStatus.SERVICE_UNAVAILABLE.toString());
+                    errorResponse.setErrorMessage(StringUtils.defaultIfBlank(ex.getMessage(), "Upstream service unavailable."));
                 } else {
                     errorResponse.setErrorMessage(t.getMessage());
                 }

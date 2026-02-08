@@ -35,6 +35,8 @@ VALUES ('llm-ollama-model-name', 'qwen3:14b-q8_0', 'Ollama 模型名称');
 INSERT INTO ai_properties (property_name, property_value, description)
 VALUES ('llm-ollama-base-url', 'http://172.16.8.107:11434', 'Ollama base url');
 INSERT INTO ai_properties (property_name, property_value, description)
+VALUES ('llm-ollama-key', '', 'Ollama API Key');
+INSERT INTO ai_properties (property_name, property_value, description)
 VALUES ('llm-ollama-keep-alive-seconds', '3600', 'Ollama 模型驻留时间（秒）');
 INSERT INTO ai_properties (property_name, property_value, description)
 VALUES ('llm-ollama-context-length', '32768', 'Ollama 上下文长度');
@@ -56,6 +58,8 @@ INSERT INTO ai_properties (property_name, property_value, description)
 VALUES ('embedding-ollama-model-name', 'nomic-embed-text:latest', 'Ollama embedding 模型名称');
 INSERT INTO ai_properties (property_name, property_value, description)
 VALUES ('embedding-ollama-base-url', 'http://127.0.0.1:11434', 'Ollama embedding base url');
+INSERT INTO ai_properties (property_name, property_value, description)
+VALUES ('embedding-ollama-key', '', 'Ollama embedding API Key');
 INSERT INTO ai_properties (property_name, property_value, description)
 VALUES ('embedding-ollama-keep_alive_seconds', '3600', 'Ollama embedding 模型驻留时间（秒）');
 INSERT INTO ai_properties (property_name, property_value, description)

@@ -12,6 +12,7 @@ public class EmbeddingProperties {
     public String ollamaModelName;
     public String ollamaBaseUrl;
     public int keepAliveSeconds;
+    public String ollamaKey;
     public String openAiModelName;
     public String openAiBaseUrl;
     public String embeddingsPath;
@@ -23,6 +24,7 @@ public class EmbeddingProperties {
     private static final String KEY_OLLAMA_MODEL_NAME = "embedding-ollama-model-name";
     private static final String KEY_OLLAMA_BASE_URL = "embedding-ollama-base-url";
     private static final String KEY_OLLAMA_KEEP_ALIVE_SECONDS = "embedding-ollama-keep_alive_seconds";
+    private static final String KEY_OLLAMA_KEY = "embedding-ollama-key";
 
     private static final String KEY_OPEN_AI_MODEL_NAME = "embedding-open-ai-model-name";
     private static final String KEY_OPEN_AI_BASE_URL = "embedding-open-ai-base-url";
@@ -48,6 +50,7 @@ public class EmbeddingProperties {
         this.ollamaModelName = readString(KEY_OLLAMA_MODEL_NAME, "nomic-embed-text:latest");
         this.ollamaBaseUrl = readString(KEY_OLLAMA_BASE_URL, "http://127.0.0.1:11434");
         this.keepAliveSeconds = readInt(KEY_OLLAMA_KEEP_ALIVE_SECONDS, 3600);
+        this.ollamaKey = readString(KEY_OLLAMA_KEY, "");
 
         this.openAiModelName = readString(KEY_OPEN_AI_MODEL_NAME, "text-embedding-v4");
         this.openAiBaseUrl = readString(KEY_OPEN_AI_BASE_URL, "https://dashscope.aliyuncs.com");
