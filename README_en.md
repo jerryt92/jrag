@@ -14,6 +14,18 @@ Jrag is a RAG (Retrieval-Augmented Generation) and MCP tool integration platform
 
 All Docker files are under `docker/`. The default setup starts Milvus (v2.6.9) and Jrag.
 
+1. Pull all dependency images (optional)
+
+```shell
+docker pull maven:3.8.8-amazoncorretto-21-debian
+docker pull eclipse-temurin:21-jre
+docker pull alpine/git
+docker pull milvusdb/milvus:v2.6.9
+docker pull alpine:3.20
+```
+
+2. Deployment
+
 ```shell
 docker compose -f docker/docker-compose.yml up -d --build
 ```
