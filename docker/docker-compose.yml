@@ -40,6 +40,7 @@ services:
       retries: 3
 
   jrag:
+    image: jrag:${TAG:-latest}
     build:
       context: ..
       dockerfile: docker/Dockerfile
