@@ -34,5 +34,5 @@ WORKDIR /opt/jrag
 ENV JRAG_CONFIG_PATH=/config/
 COPY --from=build /workspace/jrag-starter/target/*.tar.gz /tmp/jrag.tar.gz
 RUN mkdir -p /opt && tar -xzf /tmp/jrag.tar.gz -C /opt && rm /tmp/jrag.tar.gz
-EXPOSE 8080
+EXPOSE 30110
 ENTRYPOINT ["sh", "-c", "exec java -cp \"/opt/jrag/classes:/opt/jrag/lib/*\" $JAVA_OPTS io.github.jerryt92.jrag.JragStarterMain"]
