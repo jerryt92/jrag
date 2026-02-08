@@ -45,7 +45,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-      no_cache: false
+      no_cache: true
       args:
         UPDATE_UI: ${UPDATE_UI:-true}
         JRAG_UI_REPO: ${JRAG_UI_REPO:-https://github.com/jerryt92/jrag-ui.git}
