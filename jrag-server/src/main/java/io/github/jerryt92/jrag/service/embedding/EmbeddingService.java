@@ -25,6 +25,7 @@ import reactor.netty.http.client.HttpClient;
 import javax.net.ssl.SSLException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
@@ -35,7 +36,7 @@ public class EmbeddingService {
     private String checkEmbeddingHash;
     @Getter
     private Integer dimension;
-    private final EmbeddingModel.EmbeddingsRequest checkEmbeddingsRequest = new EmbeddingModel.EmbeddingsRequest().setInput(List.of("test"));
+    public final EmbeddingModel.EmbeddingsRequest checkEmbeddingsRequest = new EmbeddingModel.EmbeddingsRequest().setInput(List.of("test"));
     private final EmbeddingProperties embeddingProperties;
     private volatile WebClient webClient;
     private volatile String embeddingsPath;
@@ -50,12 +51,7 @@ public class EmbeddingService {
         rebuildClient();
     }
 
-    public synchronized void reload() {
-        rebuildClient();
-        init();
-    }
-
-    private void rebuildClient() {
+    public void rebuildClient() {
         SslContext sslContext;
         try {
             // 配置忽略 SSL 证书校验
@@ -101,7 +97,7 @@ public class EmbeddingService {
             if (response != null && !response.getData().isEmpty()) {
                 EmbeddingModel.EmbeddingsItem testEmbed = response.getData().getFirst();
                 dimension = testEmbed.getEmbeddings().length;
-                checkEmbeddingHash = HashUtil.getMessageDigest(testEmbed.toString().getBytes(), HashUtil.MdAlgorithm.SHA256);
+                checkEmbeddingHash = HashUtil.getMessageDigest(Arrays.toString(testEmbed.getEmbeddings()).getBytes(), HashUtil.MdAlgorithm.SHA256);
             } else {
                 log.warn("Init failed: Unable to fetch embedding for test input.");
             }

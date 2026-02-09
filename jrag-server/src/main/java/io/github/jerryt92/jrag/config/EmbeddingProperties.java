@@ -20,16 +20,16 @@ public class EmbeddingProperties {
 
     private final PropertiesService propertiesService;
     // Keys in table `ai_properties.property_name`
-    private static final String KEY_PROVIDER = "embedding-provider";
-    private static final String KEY_OLLAMA_MODEL_NAME = "embedding-ollama-model-name";
-    private static final String KEY_OLLAMA_BASE_URL = "embedding-ollama-base-url";
-    private static final String KEY_OLLAMA_KEEP_ALIVE_SECONDS = "embedding-ollama-keep_alive_seconds";
-    private static final String KEY_OLLAMA_KEY = "embedding-ollama-key";
+    public static final String KEY_PROVIDER = "embedding-provider";
+    public static final String KEY_OLLAMA_MODEL_NAME = "embedding-ollama-model-name";
+    public static final String KEY_OLLAMA_BASE_URL = "embedding-ollama-base-url";
+    public static final String KEY_OLLAMA_KEEP_ALIVE_SECONDS = "embedding-ollama-keep_alive_seconds";
+    public static final String KEY_OLLAMA_KEY = "embedding-ollama-key";
 
-    private static final String KEY_OPEN_AI_MODEL_NAME = "embedding-open-ai-model-name";
-    private static final String KEY_OPEN_AI_BASE_URL = "embedding-open-ai-base-url";
-    private static final String KEY_OPEN_AI_EMBEDDINGS_PATH = "embedding-open-ai-embeddings-path";
-    private static final String KEY_OPEN_AI_KEY = "embedding-open-ai-key";
+    public static final String KEY_OPEN_AI_MODEL_NAME = "embedding-open-ai-model-name";
+    public static final String KEY_OPEN_AI_BASE_URL = "embedding-open-ai-base-url";
+    public static final String KEY_OPEN_AI_EMBEDDINGS_PATH = "embedding-open-ai-embeddings-path";
+    public static final String KEY_OPEN_AI_KEY = "embedding-open-ai-key";
 
     public EmbeddingProperties(PropertiesService propertiesService) {
         this.propertiesService = propertiesService;
