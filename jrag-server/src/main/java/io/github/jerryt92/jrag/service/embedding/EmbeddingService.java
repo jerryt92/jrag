@@ -152,36 +152,39 @@ public class EmbeddingService {
     }
 
     private void handleOllamaEmbeddings(EmbeddingModel.EmbeddingsRequest embeddingsRequest, List<EmbeddingModel.EmbeddingsItem> embeddingsItems) {
-        OllamaApi.EmbeddingsRequest ollamaEmbeddingsRequest = new OllamaApi.EmbeddingsRequest(
-                embeddingProperties.ollamaModelName,
-                embeddingsRequest.getInput(),
-                secondsToDurationString(embeddingProperties.keepAliveSeconds),
-                null,
-                null
-        );
-        OllamaApi.EmbeddingsResponse ollamaEmbeddingsResponse = webClient.post()
-                .uri(embeddingsPath)
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(ollamaEmbeddingsRequest) // 自动序列化为 JSON
-                .retrieve()
-                .bodyToMono(OllamaApi.EmbeddingsResponse.class)
-                .block(); // 阻塞等待结果
-        if (ollamaEmbeddingsResponse != null && ollamaEmbeddingsResponse.embeddings() != null) {
-            List<float[]> embeddings = ollamaEmbeddingsResponse.embeddings();
-            for (int i = 0; i < embeddings.size(); i++) {
-                // embeddings item is typically a List<Double>
-                float[] floats = embeddings.get(i);
-                for (int j = 0; j < embeddings.size(); j++) {
-                    Number v = floats[j];
-                    floats[j] = v.floatValue();
+        // 对输入进行分片处理，每片最多包含10个文本
+        List<List<String>> partitionedInputs = ListUtils.partition(embeddingsRequest.getInput(), 10);
+        // 遍历每个分片并发送请求
+        for (List<String> partitionInput : partitionedInputs) {
+            OllamaApi.EmbeddingsRequest ollamaEmbeddingsRequest = new OllamaApi.EmbeddingsRequest(
+                    embeddingProperties.ollamaModelName,
+                    partitionInput,
+                    secondsToDurationString(embeddingProperties.keepAliveSeconds),
+                    null,
+                    null
+            );
+
+            OllamaApi.EmbeddingsResponse ollamaEmbeddingsResponse = webClient.post()
+                    .uri(embeddingsPath)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(ollamaEmbeddingsRequest) // 自动序列化为 JSON
+                    .retrieve()
+                    .bodyToMono(OllamaApi.EmbeddingsResponse.class)
+                    .block(); // 阻塞等待结果
+
+            if (ollamaEmbeddingsResponse != null && ollamaEmbeddingsResponse.embeddings() != null) {
+                List<float[]> embeddings = ollamaEmbeddingsResponse.embeddings();
+                for (int i = 0; i < embeddings.size(); i++) {
+                    float[] floats = embeddings.get(i);
+                    embeddingsItems.add(new EmbeddingModel.EmbeddingsItem()
+                            .setEmbeddingProvider(embeddingProperties.embeddingProvider)
+                            .setEmbeddingModel(embeddingProperties.ollamaModelName)
+                            .setCheckEmbeddingHash(checkEmbeddingHash)
+                            .setText(partitionInput.get(i))
+                            .setEmbeddings(floats));
                 }
-                embeddingsItems.add(new EmbeddingModel.EmbeddingsItem()
-                        .setEmbeddingProvider(embeddingProperties.embeddingProvider)
-                        .setEmbeddingModel(embeddingProperties.ollamaModelName)
-                        .setCheckEmbeddingHash(checkEmbeddingHash)
-                        .setText(embeddingsRequest.getInput().get(i))
-                        .setEmbeddings(floats));
             }
         }
+        log.info("finish embeddings: {}", embeddingsItems.size());
     }
 }
