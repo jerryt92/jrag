@@ -2,7 +2,9 @@ FROM alpine/git AS ui
 ARG JRAG_UI_REPO=https://github.com/jerryt92/jrag-ui.git
 ARG JRAG_UI_BRANCH=dist
 ARG UPDATE_UI=true
-RUN if [ "${UPDATE_UI}" = "true" ]; then \
+RUN echo "UPDATE_UI=${UPDATE_UI}" && \
+    rm -rf /dist && \
+    if [ "${UPDATE_UI}" = "true" ]; then \
       git clone -b "${JRAG_UI_BRANCH}" "${JRAG_UI_REPO}" /dist; \
     else \
       mkdir -p /dist; \
