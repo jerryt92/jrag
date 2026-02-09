@@ -265,7 +265,7 @@ public class Retriever {
         if (embeddingsQueryItems == null || embeddingsQueryItems.isEmpty()) {
             return fallbackText;
         }
-        EmbeddingModel.EmbeddingsQueryItem firstItem = embeddingsQueryItems.get(0);
+        EmbeddingModel.EmbeddingsQueryItem firstItem = embeddingsQueryItems.getFirst();
         if (textChunkMap != null && firstItem != null && StringUtils.isNotBlank(firstItem.getTextChunkId())) {
             TextChunkPo textChunkPo = textChunkMap.get(firstItem.getTextChunkId());
             if (textChunkPo != null && StringUtils.isNotBlank(textChunkPo.getTextChunk())) {
