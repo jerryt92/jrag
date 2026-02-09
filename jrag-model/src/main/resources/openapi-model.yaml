@@ -114,6 +114,36 @@ components:
           type: string
           format: password
           description: 新密码
+    ValidateCaptchaDto:
+      type: object
+      properties:
+        sliderX:
+          type: number
+          format: float
+        hash:
+          type: string
+        track:
+          type: array
+          items:
+            $ref: '#/components/schemas/Track'
+      required:
+        - sliderX
+        - hash
+    Track:
+      type: object
+      properties:
+        t:
+          type: integer
+          format: int64
+          description: 时间戳
+        pointerX:
+          type: number
+          format: float
+          description: 光标在屏幕上的x坐标
+        pointerY:
+          type: number
+          format: float
+          description: 光标在屏幕上的y坐标
     SlideCaptchaResp:
       type: object
       description: 滑动验证码

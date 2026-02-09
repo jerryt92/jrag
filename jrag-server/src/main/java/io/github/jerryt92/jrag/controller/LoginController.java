@@ -2,6 +2,8 @@ package io.github.jerryt92.jrag.controller;
 
 import io.github.jerryt92.jrag.model.LoginRequestDto;
 import io.github.jerryt92.jrag.model.SlideCaptchaResp;
+import io.github.jerryt92.jrag.model.Track;
+import io.github.jerryt92.jrag.model.ValidateCaptchaDto;
 import io.github.jerryt92.jrag.model.VerifySlideCaptcha200Response;
 import io.github.jerryt92.jrag.model.security.SessionBo;
 import io.github.jerryt92.jrag.server.api.LoginApi;
@@ -49,10 +51,19 @@ public class LoginController implements LoginApi {
     }
 
     @Override
-    public ResponseEntity<VerifySlideCaptcha200Response> verifySlideCaptcha(Float sliderX, String hash) {
+    public ResponseEntity<VerifySlideCaptcha200Response> verifySlideCaptcha(ValidateCaptchaDto validateCaptchaDto) {
         VerifySlideCaptcha200Response response = new VerifySlideCaptcha200Response();
-        String code = captchaService.verifySlideCaptchaGetCaptchaCode(sliderX, hash);
-        if (null != code) {
+        if (validateCaptchaDto == null || validateCaptchaDto.getTrack() == null) {
+            response.setResult(false);
+            return ResponseEntity.ok(response);
+        }
+        Float sliderX = validateCaptchaDto.getSliderX();
+        String hash = validateCaptchaDto.getHash();
+        // 将 List<Track> 转换为 Track[]
+        Track[] trackArray = validateCaptchaDto.getTrack().toArray(new Track[0]);
+        // 调用服务方法
+        String code = captchaService.verifySlideCaptchaGetCaptchaCode(sliderX, hash, trackArray);
+        if (code != null) {
             response.setResult(true);
             response.setCode(code);
         } else {
