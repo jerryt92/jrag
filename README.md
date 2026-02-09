@@ -23,7 +23,21 @@ docker pull alpine/git
 docker pull milvusdb/milvus:v2.6.9
 docker pull alpine:3.20
 ```
-2. 部署
+2. 拉取前端
+
+shell
+```shell
+rm -rf jrag-starter/src/main/resources/dist
+git clone -b dist https://github.com/jerryt92/jrag-ui.git jrag-starter/src/main/resources/dist
+```
+
+Windows
+```
+rmdir /s /q jrag-starter\src\main\resources\dist
+git clone -b dist https://github.com/jerryt92/jrag-ui.git jrag-starter\src\main\resources\dist
+```
+
+3. 部署
 
 ```shell
 docker compose -f docker/docker-compose.yml up -d --build
@@ -108,10 +122,5 @@ admin
 jrag@2025
 
 ## 前端
-
-```shell
-rm -rf jrag-starter/src/main/resources/dist
-git clone -b dist https://github.com/jerryt92/jrag-ui.git jrag-starter/src/main/resources/dist
-```
 
 [jrag-ui](https://github.com/jerryt92/jrag-ui)
