@@ -3,6 +3,7 @@ package io.github.jerryt92.jrag.service.llm.client;
 import io.github.jerryt92.jrag.config.LlmProperties;
 import io.github.jerryt92.jrag.model.ChatCallback;
 import io.github.jerryt92.jrag.model.ChatModel;
+import io.github.jerryt92.jrag.utils.LlmBaseUtils;
 import reactor.core.Disposable;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -13,9 +14,11 @@ public class DynamicLlmClient extends LlmClient {
     public DynamicLlmClient(LlmProperties llmProperties) {
         super(llmProperties);
         this.delegate.set(buildClient());
+        LlmBaseUtils.llmClient = this;
     }
 
     public void reload() {
+        LlmBaseUtils.llmClient = this;
         this.delegate.set(buildClient());
     }
 
