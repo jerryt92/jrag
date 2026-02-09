@@ -1,6 +1,7 @@
 package io.github.jerryt92.jrag.service.security;
 
 import io.github.jerryt92.jrag.model.SlideCaptchaResp;
+import io.github.jerryt92.jrag.model.Track;
 import io.github.jerryt92.jrag.utils.HashUtil;
 import io.github.jerryt92.jrag.utils.UUIDUtil;
 import org.apache.logging.log4j.LogManager;
@@ -58,7 +59,6 @@ public class CaptchaService {
 
     /**
      * 生成凹槽背景和滑块图像
-     *
      */
     public SlideCaptchaResp genSlideCaptcha() {
         // 凹槽背景图像
@@ -149,13 +149,17 @@ public class CaptchaService {
      * @param hash
      * @return
      */
-    public String verifySlideCaptchaGetCaptchaCode(Float sliderX, String hash) {
-        if (null == sliderX || null == hash) {
+    public String verifySlideCaptchaGetCaptchaCode(Float sliderX, String hash, Track[] track) {
+        if (sliderX == null || hash == null) {
+            return null;
+        }
+        // 行为轨迹校验
+        if (!validateTrack(track)) {
             return null;
         }
         CaptchaCache captchaCache = captchaCacheMap.get(CAPTCHA_KEY_PREFIX + hash);
         try {
-            if (null != captchaCache) {
+            if (captchaCache != null) {
                 if (System.currentTimeMillis() > captchaCache.expireTime) {
                     captchaCacheMap.remove(CAPTCHA_KEY_PREFIX + hash);
                     return null;
@@ -177,6 +181,117 @@ public class CaptchaService {
             log.error(t);
         }
         return null;
+    }
+
+    /**
+     * 行为校验
+     */
+    private boolean validateTrack(Track[] track) {
+        if (track == null || track.length < 2) {
+            log.warn("validateTrack 失败: track 为空或长度不足, len={}", track == null ? null : track.length);
+            return false;
+        }
+        Track first = track[0];
+        Track last = track[track.length - 1];
+        if (first == null || last == null) {
+            log.warn("validateTrack 失败: 首尾轨迹点为空");
+            return false;
+        }
+        long totalTime = last.getT() - first.getT();
+        // 总时间小于150ms或大于15s，均视为异常
+        if (totalTime < 150 || totalTime > 15000) {
+            log.warn("validateTrack 失败: 总耗时异常 totalTime={}ms", totalTime);
+            return false;
+        }
+        float prevX = first.getPointerX();
+        long prevT = first.getT();
+        if (prevT < 0) {
+            log.warn("validateTrack 失败: 起始时间非法 prevT={}", prevT);
+            return false;
+        }
+        float sumSpeed = 0;
+        float sumSpeedSq = 0;
+        int speedSamples = 0;
+        int minorBackward = 0;
+        // 微抖动计数 (极短增量)
+        int microMoveCount = 0;
+        // 连续不动次数
+        int zeroDxStreak = 0;
+        // 记录长时间保持不动段
+        int longZeroDxStreak = 0;
+        float prevSpeed = -1;
+        // 速度显著变化次数
+        int speedChangeCount = 0;
+        // 判定为“微抖动”的最大位移
+        final float MICRO_MOVE_MAX = 2f;
+        // 判定速度显著变化的差值
+        final float SPEED_CHANGE_DELTA = 20f;
+        final int MAX_ZERO_STREAK_ALLOWED = 5;
+        for (int i = 1; i < track.length; i++) {
+            Track cur = track[i];
+            if (cur == null) {
+                log.warn("validateTrack 失败: 存在空轨迹点 index={}", i);
+                return false;
+            }
+            if (cur.getT() <= prevT) {
+                log.warn("validateTrack 失败: 时间不递增 index={}, cur.t={}, prevT={}", i, cur.getT(), prevT);
+                return false;
+            }
+            float dx = cur.getPointerX() - prevX;
+            long dt = cur.getT() - prevT;
+            if (dx < 0) {
+                minorBackward++;
+            }
+            if (dx == 0) {
+                zeroDxStreak++;
+                if (zeroDxStreak > MAX_ZERO_STREAK_ALLOWED) {
+                    longZeroDxStreak++;
+                }
+            } else {
+                zeroDxStreak = 0;
+            }
+            if (dx > 0) {
+                float instSpeed = dx / dt * 1000f;
+                sumSpeed += instSpeed;
+                sumSpeedSq += instSpeed * instSpeed;
+                speedSamples++;
+
+                if (dx <= MICRO_MOVE_MAX) {
+                    microMoveCount++;
+                }
+                if (prevSpeed >= 0 && Math.abs(instSpeed - prevSpeed) > SPEED_CHANGE_DELTA) {
+                    speedChangeCount++;
+                }
+                prevSpeed = instSpeed;
+            }
+            prevX = cur.getPointerX();
+            prevT = cur.getT();
+        }
+        if (speedSamples > 3) {
+            float avg = sumSpeed / speedSamples;
+            float var = (sumSpeedSq / speedSamples) - avg * avg;
+            if (var < 200) {
+                log.warn("validateTrack 失败: 速度方差过低(疑似匀速脚本) avg={}, var={}", avg, var);
+                return false;
+            }
+        }
+        // 无抖动校验：缺少微小自然抖动或速度变化极少
+        if (speedSamples >= 6) {
+            if (microMoveCount == 0) {
+                log.warn("validateTrack 失败: 缺少微抖动(疑似脚本)");
+                return false;
+            }
+            if (speedChangeCount < 2) {
+                log.warn("validateTrack 失败: 速度变化过少 speedChangeCount={}", speedChangeCount);
+                return false;
+            }
+        }
+        // 长时间完全静止可疑
+        if (longZeroDxStreak > 2) {
+            log.warn("validateTrack 失败: 长时间多段保持不动 longZeroDxStreak={}", longZeroDxStreak);
+            return false;
+        }
+        return true;
     }
 
     /**
