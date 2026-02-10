@@ -1,7 +1,7 @@
 services:
   init-config:
     image: alpine:3.20
-    command: [ "/bin/sh", "/init/init-config.sh" ]
+    command: [ "/bin/bash", "/init/init-config.sh" ]
     environment:
       JRAG_BASE_DIR: /root/jrag
     volumes:
