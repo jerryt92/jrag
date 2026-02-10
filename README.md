@@ -21,7 +21,7 @@ docker pull maven:3.8.8-amazoncorretto-21-debian
 docker pull eclipse-temurin:21-jre
 docker pull alpine/git
 docker pull milvusdb/milvus:v2.6.9
-docker pull alpine:3.20
+docker pull debian:bookworm-slim
 ```
 2. 拉取前端
 
