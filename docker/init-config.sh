@@ -45,13 +45,6 @@ for item in /templates/*; do
 
     base_name="$(basename "${item}")"
 
-    # dist 目录
-    if [ "${base_name}" = "dist" ] && [ -d "${item}" ]; then
-        rm -rf ${BASE_DIR}/${base_name}
-        cp -r "${item}" ${BASE_DIR}/${base_name}
-        continue
-    fi
-
     # 仅复制 yaml/txt/json 文件，且目标不存在时才复制
     case "${base_name}" in
         application-dev.yaml)
