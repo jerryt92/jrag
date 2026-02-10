@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
 BASE_DIR="/jrag"
-MILVUS_DIR="${BASE_DIR}/milvus_data"
+MILVUS_DIR="${BASE_DIR}/milvus"
 VOLUME_DIR="${MILVUS_DIR}/volumes/milvus"
 EMBED_ETCD_FILE="${MILVUS_DIR}/embedEtcd.yaml"
 USER_FILE="${MILVUS_DIR}/user.yaml"

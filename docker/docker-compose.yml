@@ -1,7 +1,7 @@
 services:
   init-config:
     image: alpine:3.20
-    command: [ "/bin/bash", "/init/init-config.sh" ]
+    command: [ "/bin/sh", "/init/init-config.sh" ]
     environment:
       JRAG_BASE_DIR: /root/jrag
     volumes:
@@ -29,9 +29,8 @@ services:
       - "9091:9091"
       - "2379:2379"
     volumes:
-      - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}milvus_data${DIR_PATH_SEPARATOR}volumes${DIR_PATH_SEPARATOR}milvus_data:/var/lib/milvus
-      - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}milvus_data${DIR_PATH_SEPARATOR}embedEtcd.yaml:/milvus_data/configs/embedEtcd.yaml
-      - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}milvus_data${DIR_PATH_SEPARATOR}user.yaml:/milvus_data/configs/user.yaml
+      - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}milvus${DIR_PATH_SEPARATOR}volumes${DIR_PATH_SEPARATOR}milvus:/var/lib/milvus
+      - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}milvus:/milvus/configs
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:9091/healthz" ]
       interval: 30s
