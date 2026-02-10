@@ -53,7 +53,6 @@ public class McpService {
     private final FunctionCallingService functionCallingService;
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(15L);
     private static final String DEFAULT_MCP_JSON = "{\"mcpServers\":{}}";
-    private static final String MCP_CONFIG_ENV_KEY = "MCP_CONFIG_PATH";
     private static final String MCP_DEFAULT_SUBDIR = "jrag/mcp";
     private static final String MCP_CONFIG_FILE = "mcp.json";
 
@@ -160,14 +159,6 @@ public class McpService {
     }
 
     private Path resolveConfigFilePath() {
-        String configPath = System.getenv(MCP_CONFIG_ENV_KEY);
-        if (configPath != null && !configPath.isBlank()) {
-            String normalized = configPath.trim();
-            if (normalized.startsWith("file:")) {
-                normalized = normalized.substring("file:".length());
-            }
-            return Paths.get(normalized).toAbsolutePath();
-        }
         String userHome = System.getProperty("user.home", ".");
         return Paths.get(userHome, MCP_DEFAULT_SUBDIR, MCP_CONFIG_FILE).toAbsolutePath();
     }

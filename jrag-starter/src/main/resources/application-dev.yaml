@@ -20,7 +20,7 @@ jrag:
     captcha:
       expire-seconds: 300
     # 无用户模式
-    no-user: true
+    no-user: false
   vector-database:
     provider: milvus
     milvus:

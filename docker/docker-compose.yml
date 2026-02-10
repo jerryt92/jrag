@@ -5,7 +5,7 @@ services:
     environment:
       JRAG_BASE_DIR: /root/jrag
     volumes:
-      - ${HOME}/jrag:/config
+      - ${JRAG_BASE_PATH}:/jrag
       - ../jrag-starter/src/main/resources:/templates:ro
       - ./init-config.sh:/init/init-config.sh:ro
     restart: "no"
@@ -29,9 +29,9 @@ services:
       - "9091:9091"
       - "2379:2379"
     volumes:
-      - ${HOME}/jrag/milvus/volumes/milvus:/var/lib/milvus
-      - ${HOME}/jrag/milvus/embedEtcd.yaml:/milvus/configs/embedEtcd.yaml
-      - ${HOME}/jrag/milvus/user.yaml:/milvus/configs/user.yaml
+      - ${JRAG_BASE_PATH}/milvus_data/volumes/milvus:/var/lib/milvus
+      - ${JRAG_BASE_PATH}/milvus_data/embedEtcd.yaml:/milvus/configs/embedEtcd.yaml
+      - ${JRAG_BASE_PATH}/milvus_data/user.yaml:/milvus/configs/user.yaml
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:9091/healthz" ]
       interval: 30s
@@ -57,13 +57,17 @@ services:
     ports:
       - "30110:30110"
     environment:
-      JRAG_CONFIG_PATH: /config/
       JRAG_BASE_DIR: /root/jrag
-      MCP_CONFIG_PATH: /jrag/mcp/mcp.json
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
-      - ${HOME}/jrag/config:/config:ro
-      - ${HOME}/jrag/logs:/opt/jrag/logs
-      - ${HOME}/jrag:/root/jrag
-      - ${HOME}/jrag/mcp:/jrag/mcp
+      - ${JRAG_BASE_PATH}/config/application.yaml:/opt/jrag/classes/application.yaml
+      - ${JRAG_BASE_PATH}/config/application-mysql.yaml:/opt/jrag/classes/application-mysql.yaml
+      - ${JRAG_BASE_PATH}/config/application-product.yaml:/opt/jrag/classes/application-product.yaml
+      - ${JRAG_BASE_PATH}/config/application-sqlite.yaml:/opt/jrag/classes/application-sqlite.yaml
+      - ${JRAG_BASE_PATH}/config/qa-template.json:/opt/jrag/classes/qa-template.json
+      - ${JRAG_BASE_PATH}/config/system_prompt.txt:/opt/jrag/classes/system_prompt.txt
+      - ${JRAG_BASE_PATH}/dist:/opt/jrag/classes/dist
+      - ${JRAG_BASE_PATH}/logs:/opt/jrag/logs
+      - ${JRAG_BASE_PATH}:/root/jrag
+

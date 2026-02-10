@@ -12,7 +12,6 @@ COPY . /workspace
 RUN --mount=type=cache,target=/root/.m2 mvn -s "${MAVEN_SETTINGS}" -pl jrag-starter -am -DskipTests package
 FROM eclipse-temurin:21-jre
 WORKDIR /opt/jrag
-ENV JRAG_CONFIG_PATH=/config/
 COPY --from=build /workspace/jrag-starter/target/*.tar.gz /tmp/jrag.tar.gz
 RUN mkdir -p /opt && tar -xzf /tmp/jrag.tar.gz -C /opt && rm /tmp/jrag.tar.gz
 EXPOSE 30110

@@ -24,7 +24,7 @@ jrag:
   vector-database:
     provider: milvus
     milvus:
-      cluster-endpoint: http://milvus:19530
+      cluster-endpoint: http://host.docker.internal:19530
       collection-name: jrag
       token: root:Milvus
   file:

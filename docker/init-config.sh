@@ -1,8 +1,8 @@
 #!/usr/bin/env sh
 set -e
 
-BASE_DIR="/config"
-MILVUS_DIR="${BASE_DIR}/milvus"
+BASE_DIR="/jrag"
+MILVUS_DIR="${BASE_DIR}/milvus_data"
 VOLUME_DIR="${MILVUS_DIR}/volumes/milvus"
 EMBED_ETCD_FILE="${MILVUS_DIR}/embedEtcd.yaml"
 USER_FILE="${MILVUS_DIR}/user.yaml"
@@ -38,12 +38,30 @@ if [ ! -f "${USER_FILE}" ]; then
 EOF
 fi
 
-for file in /templates/application*.yaml; do
-    if [ -f "${file}" ]; then
-        base_name="$(basename "${file}")"
-        target_file="${JRAG_CONFIG_DIR}/${base_name}"
-        if [ ! -f "${target_file}" ]; then
-            cp "${file}" "${target_file}"
-        fi
+for item in /templates/*; do
+    if [ ! -e "${item}" ]; then
+        continue
     fi
+
+    base_name="$(basename "${item}")"
+
+    # dist 目录
+    if [ "${base_name}" = "dist" ] && [ -d "${item}" ]; then
+        rm -rf ${BASE_DIR}/${base_name}
+        cp -r "${item}" ${BASE_DIR}/${base_name}
+        continue
+    fi
+
+    # 仅复制 yaml/txt/json 文件，且目标不存在时才复制
+    case "${base_name}" in
+        application-dev.yaml)
+            # 排除 application-dev.yaml 文件
+            ;;
+        *.yaml|*.txt|*.json)
+            # 处理其他 .yaml、.txt 和 .json 文件
+            if [ ! -e "${JRAG_CONFIG_DIR}/${base_name}" ]; then
+                cp "${item}" "${JRAG_CONFIG_DIR}"
+            fi
+            ;;
+    esac
 done
