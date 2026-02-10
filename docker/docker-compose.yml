@@ -1,7 +1,13 @@
 services:
   init-config:
-    image: alpine:3.20
-    command: [ "/bin/sh", "/init/init-config.sh" ]
+    image: debian:bookworm-slim
+    entrypoint: [ "/bin/bash", "-c" ]
+    command:
+      - |
+        tr -d '\r' < /init/init-config.sh > /tmp/init-script.sh
+        chmod +x /tmp/init-script.sh
+        /bin/bash /tmp/init-script.sh
+
     environment:
       JRAG_BASE_DIR: /root/jrag
     volumes:
