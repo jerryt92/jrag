@@ -29,9 +29,9 @@ services:
       - "9091:9091"
       - "2379:2379"
     volumes:
-      - ${JRAG_BASE_PATH}/milvus_data/volumes/milvus:/var/lib/milvus
-      - ${JRAG_BASE_PATH}/milvus_data/embedEtcd.yaml:/milvus/configs/embedEtcd.yaml
-      - ${JRAG_BASE_PATH}/milvus_data/user.yaml:/milvus/configs/user.yaml
+      - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}milvus_data${DIR_PATH_SEPARATOR}volumes${DIR_PATH_SEPARATOR}milvus:/var/lib/milvus
+      - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}milvus_data${DIR_PATH_SEPARATOR}embedEtcd.yaml:/milvus/configs/embedEtcd.yaml
+      - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}milvus_data${DIR_PATH_SEPARATOR}user.yaml:/milvus/configs/user.yaml
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:9091/healthz" ]
       interval: 30s
@@ -61,13 +61,13 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
-      - ${JRAG_BASE_PATH}/config/application.yaml:/opt/jrag/classes/application.yaml
-      - ${JRAG_BASE_PATH}/config/application-mysql.yaml:/opt/jrag/classes/application-mysql.yaml
-      - ${JRAG_BASE_PATH}/config/application-product.yaml:/opt/jrag/classes/application-product.yaml
-      - ${JRAG_BASE_PATH}/config/application-sqlite.yaml:/opt/jrag/classes/application-sqlite.yaml
-      - ${JRAG_BASE_PATH}/config/qa-template.json:/opt/jrag/classes/qa-template.json
-      - ${JRAG_BASE_PATH}/config/system_prompt.txt:/opt/jrag/classes/system_prompt.txt
-      - ${JRAG_BASE_PATH}/dist:/opt/jrag/classes/dist
-      - ${JRAG_BASE_PATH}/logs:/opt/jrag/logs
+      - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}config${DIR_PATH_SEPARATOR}application.yaml:/opt/jrag/classes/application.yaml
+      - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}config${DIR_PATH_SEPARATOR}application-mysql.yaml:/opt/jrag/classes/application-mysql.yaml
+      - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}config${DIR_PATH_SEPARATOR}application-product.yaml:/opt/jrag/classes/application-product.yaml
+      - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}config${DIR_PATH_SEPARATOR}application-sqlite.yaml:/opt/jrag/classes/application-sqlite.yaml
+      - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}config${DIR_PATH_SEPARATOR}qa-template.json:/opt/jrag/classes/qa-template.json
+      - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}config${DIR_PATH_SEPARATOR}system_prompt.txt:/opt/jrag/classes/system_prompt.txt
+      - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}dist:/opt/jrag/classes/dist
+      - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}logs:/opt/jrag/logs
       - ${JRAG_BASE_PATH}:/root/jrag
 
