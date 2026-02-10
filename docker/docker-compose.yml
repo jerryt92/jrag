@@ -1,7 +1,7 @@
 services:
   init-config:
     image: alpine:3.20
-    command: [ "/bin/bash", "/init/init-config.sh" ]
+    command: [ "/bin/sh", "/init/init-config.sh" ]
     environment:
       JRAG_BASE_DIR: /root/jrag
     volumes:
@@ -12,7 +12,11 @@ services:
 
   milvus:
     image: milvusdb/milvus:v2.6.9
-    command: [ "milvus", "run", "standalone" ]
+    entrypoint: [ "/bin/bash", "-c" ]
+    command:
+      - |
+        cp /milvus/external_configs/user.yaml /milvus/configs/user.yaml
+        milvus run standalone
     depends_on:
       init-config:
         condition: service_completed_successfully
@@ -21,7 +25,7 @@ services:
     environment:
       ETCD_USE_EMBED: "true"
       ETCD_DATA_DIR: /var/lib/milvus/etcd
-      ETCD_CONFIG_PATH: /milvus/configs/embedEtcd.yaml
+      ETCD_CONFIG_PATH: /milvus/external_configs/embedEtcd.yaml
       COMMON_STORAGETYPE: local
       DEPLOY_MODE: STANDALONE
     ports:
@@ -29,9 +33,8 @@ services:
       - "9091:9091"
       - "2379:2379"
     volumes:
-      - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}milvus_data${DIR_PATH_SEPARATOR}volumes${DIR_PATH_SEPARATOR}milvus:/var/lib/milvus
-      - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}milvus_data${DIR_PATH_SEPARATOR}embedEtcd.yaml:/milvus/configs/embedEtcd.yaml
-      - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}milvus_data${DIR_PATH_SEPARATOR}user.yaml:/milvus/configs/user.yaml
+      - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}milvus${DIR_PATH_SEPARATOR}volumes${DIR_PATH_SEPARATOR}milvus:/var/lib/milvus
+      - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}milvus:/milvus/external_configs
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:9091/healthz" ]
       interval: 30s
