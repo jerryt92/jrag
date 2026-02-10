@@ -67,7 +67,6 @@ services:
       - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}config${DIR_PATH_SEPARATOR}application-sqlite.yaml:/opt/jrag/classes/application-sqlite.yaml
       - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}config${DIR_PATH_SEPARATOR}qa-template.json:/opt/jrag/classes/qa-template.json
       - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}config${DIR_PATH_SEPARATOR}system_prompt.txt:/opt/jrag/classes/system_prompt.txt
-      - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}dist:/opt/jrag/classes/dist
       - ${JRAG_BASE_PATH}${DIR_PATH_SEPARATOR}logs:/opt/jrag/logs
       - ${JRAG_BASE_PATH}:/root/jrag
 
