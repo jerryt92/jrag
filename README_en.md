@@ -35,6 +35,8 @@ git clone -b dist https://github.com/jerryt92/jrag-ui.git jrag-starter/src/main/
 Windows
 ```shell
 Remove-Item -Recurse -Force jrag-starter\src\main\resources\dist
+```
+```shell
 git clone -b dist https://github.com/jerryt92/jrag-ui.git jrag-starter\src\main\resources\dist
 ```
 
