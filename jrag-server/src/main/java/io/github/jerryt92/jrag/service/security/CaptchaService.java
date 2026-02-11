@@ -41,7 +41,7 @@ public class CaptchaService {
     private static final int SLIDE_CAPTCHA_HEIGHT = 300;
     private static final int SLIDE_CAPTCHA_SLIDER_SIZE = 50;
     Base64.Encoder encoder = Base64.getEncoder();
-    private static final Long captchaExpireSeconds = 60L;
+    private static final Long CAPTCHA_EXPIRE_TIME = 60L;
 
     private static final String CAPTCHA_KEY_PREFIX = "security_captcha:";
 
@@ -73,19 +73,20 @@ public class CaptchaService {
                 if (files != null && files.length > 0) {
                     // 随机选取一个文件
                     File randomFile = files[(int) (Math.random() * files.length)];
-                    InputStream bgStream = new FileInputStream(randomFile);
-                    puzzleImage = ImageIO.read(bgStream);
-                    if (puzzleImage != null) {
-                        // 如果图片尺寸不符，缩放
-                        if (puzzleImage.getWidth() != SLIDE_CAPTCHA_WIDTH || puzzleImage.getHeight() != SLIDE_CAPTCHA_HEIGHT) {
-                            BufferedImage scaled = new BufferedImage(SLIDE_CAPTCHA_WIDTH, SLIDE_CAPTCHA_HEIGHT, BufferedImage.TYPE_INT_RGB);
-                            Graphics2D g2d = scaled.createGraphics();
-                            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-                            g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-                            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                            g2d.drawImage(puzzleImage, 0, 0, SLIDE_CAPTCHA_WIDTH, SLIDE_CAPTCHA_HEIGHT, null);
-                            g2d.dispose();
-                            puzzleImage = scaled;
+                    try (InputStream bgStream = new FileInputStream(randomFile)) {
+                        puzzleImage = ImageIO.read(bgStream);
+                        if (puzzleImage != null) {
+                            // 如果图片尺寸不符，缩放
+                            if (puzzleImage.getWidth() != SLIDE_CAPTCHA_WIDTH || puzzleImage.getHeight() != SLIDE_CAPTCHA_HEIGHT) {
+                                BufferedImage scaled = new BufferedImage(SLIDE_CAPTCHA_WIDTH, SLIDE_CAPTCHA_HEIGHT, BufferedImage.TYPE_INT_RGB);
+                                Graphics2D g2d = scaled.createGraphics();
+                                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                                g2d.drawImage(puzzleImage, 0, 0, SLIDE_CAPTCHA_WIDTH, SLIDE_CAPTCHA_HEIGHT, null);
+                                g2d.dispose();
+                                puzzleImage = scaled;
+                            }
                         }
                     }
                 }
@@ -131,7 +132,7 @@ public class CaptchaService {
             CaptchaCache captchaCache = new CaptchaCache();
             captchaCache.code = code;
             captchaCache.puzzleX = x;
-            captchaCache.expireTime = System.currentTimeMillis() + captchaExpireSeconds * 1000;
+            captchaCache.expireTime = System.currentTimeMillis() + CAPTCHA_EXPIRE_TIME * 1000;
             captchaCacheMap.put(CAPTCHA_KEY_PREFIX + hash, captchaCache);
             return slideCaptchaResp;
         } catch (IOException | NoSuchAlgorithmException e) {
@@ -145,151 +146,151 @@ public class CaptchaService {
     /**
      * 验证滑块验证码
      *
-     * @param sliderX
-     * @param hash
-     * @return
+     * @param sliderX 用户拖动的最终X坐标 (前端传来的结果值)
+     * @param hash    验证码唯一标识
+     * @param track   行为轨迹数组
+     * @return 验证成功返回 code，失败返回 null
      */
     public String verifySlideCaptchaGetCaptchaCode(Float sliderX, String hash, Track[] track) {
-        if (sliderX == null || hash == null) {
+        if (sliderX == null || hash == null || track == null) {
             return null;
         }
-        // 行为轨迹校验
-        if (!validateTrack(track)) {
-            return null;
-        }
+        // 1. 缓存层校验 (先判断是否存在，过期逻辑)
         CaptchaCache captchaCache = captchaCacheMap.get(CAPTCHA_KEY_PREFIX + hash);
+        if (captchaCache == null) {
+            return null;
+        }
+        // 2. 校验过期时间
+        if (System.currentTimeMillis() > captchaCache.expireTime) {
+            captchaCacheMap.remove(CAPTCHA_KEY_PREFIX + hash);
+            return null;
+        }
+        // 3. 核心：行为轨迹算法校验
+        if (!validateTrack(track)) {
+            log.warn("滑块轨迹校验失败: hash={}", hash);
+            return null;
+        }
+
         try {
-            if (captchaCache != null) {
-                if (System.currentTimeMillis() > captchaCache.expireTime) {
-                    captchaCacheMap.remove(CAPTCHA_KEY_PREFIX + hash);
-                    return null;
+            String code = captchaCache.code;
+            Float puzzleX = captchaCache.puzzleX;
+
+            // puzzleX != null 说明还没被验证过
+            if (null != puzzleX) {
+                // 4. 校验最终结果准确度 (允许 5px 误差)
+                if (Math.abs(sliderX - puzzleX) < 5) {
+                    // 标记为“已验证”：将 puzzleX 置空 (根据你的业务逻辑)
+                    captchaCache.puzzleX = null;
+                    // 更新缓存
+                    captchaCacheMap.put(CAPTCHA_KEY_PREFIX + hash, captchaCache);
+                    log.info("滑块验证成功: hash={}", hash);
+                    return code;
                 }
-                String code = captchaCache.code;
-                Float puzzleX = captchaCache.puzzleX;
-                if (null != puzzleX) {
-                    // 如果输入的滑块位置和凹槽位置偏差在5px内，则验证成功
-                    if (Math.abs(sliderX - puzzleX) < 5) {
-                        captchaCache.puzzleX = null;
-                        // 验证过滑块的缓存数据，删除坐标信息
-                        captchaCacheMap.put(CAPTCHA_KEY_PREFIX + hash, captchaCache);
-                        return code;
-                    }
-                }
-                captchaCacheMap.remove(CAPTCHA_KEY_PREFIX + hash);
+            } else {
+                // 如果 puzzleX 已经是 null，说明之前已经验证通过了，防止重复使用旧 Token
+                return code;
             }
+            // 验证失败，移除缓存，强制重刷
+            captchaCacheMap.remove(CAPTCHA_KEY_PREFIX + hash);
         } catch (Throwable t) {
-            log.error(t);
+            log.error("验证异常", t);
         }
         return null;
     }
 
     /**
-     * 行为校验
+     * 行为校验算法
+     * * @param track 轨迹数组
      */
     private boolean validateTrack(Track[] track) {
-        if (track == null || track.length < 2) {
-            log.warn("validateTrack 失败: track 为空或长度不足, len={}", track == null ? null : track.length);
+        if (track == null || track.length < 5) {
+            // 轨迹点过少（<5），基本可以判定为脚本直接调用接口
+            log.warn("validateTrack 失败: 轨迹点过少 len={}", track == null ? 0 : track.length);
             return false;
         }
         Track first = track[0];
         Track last = track[track.length - 1];
-        if (first == null || last == null) {
-            log.warn("validateTrack 失败: 首尾轨迹点为空");
-            return false;
-        }
+        // --- 1. 基础物理规则校验 ---
+        // 时间校验：极速不低于 200ms (给予一定宽容度设为 100ms)，也不应停顿太久
         long totalTime = last.getT() - first.getT();
-        // 总时间小于150ms或大于15s，均视为异常
-        if (totalTime < 150 || totalTime > 15000) {
-            log.warn("validateTrack 失败: 总耗时异常 totalTime={}ms", totalTime);
+        if (totalTime < 100 || totalTime > 10000) {
+            log.warn("validateTrack 失败: 总耗时异常 {}ms", totalTime);
             return false;
         }
-        float prevX = first.getPointerX();
-        long prevT = first.getT();
-        if (prevT < 0) {
-            log.warn("validateTrack 失败: 起始时间非法 prevT={}", prevT);
-            return false;
-        }
-        float sumSpeed = 0;
-        float sumSpeedSq = 0;
-        int speedSamples = 0;
-        int minorBackward = 0;
-        // 微抖动计数 (极短增量)
-        int microMoveCount = 0;
-        // 连续不动次数
-        int zeroDxStreak = 0;
-        // 记录长时间保持不动段
-        int longZeroDxStreak = 0;
-        float prevSpeed = -1;
-        // 速度显著变化次数
-        int speedChangeCount = 0;
-        // 判定为“微抖动”的最大位移
-        final float MICRO_MOVE_MAX = 2f;
-        // 判定速度显著变化的差值
-        final float SPEED_CHANGE_DELTA = 20f;
-        final int MAX_ZERO_STREAK_ALLOWED = 5;
+        // --- 2. 统计特征分析 ---
+        float sumYChange = 0; // Y轴累计变化量
+        float maxSpeed = 0;   // 最大速度
+        double sumSpeed = 0;  // 速度总和
+        int speedSamples = 0; // 速度采样数
+        // 记录倒数 1/4 阶段的速度，用于检测减速行为
+        double lastStageSpeedSum = 0;
+        int lastStageCount = 0;
+        int startCheckIndex = (int) (track.length * 0.75);
         for (int i = 1; i < track.length; i++) {
             Track cur = track[i];
-            if (cur == null) {
-                log.warn("validateTrack 失败: 存在空轨迹点 index={}", i);
+            Track prev = track[i - 1];
+            // 时间倒流校验
+            if (cur.getT() < prev.getT()) {
                 return false;
             }
-            if (cur.getT() <= prevT) {
-                log.warn("validateTrack 失败: 时间不递增 index={}, cur.t={}, prevT={}", i, cur.getT(), prevT);
-                return false;
-            }
-            float dx = cur.getPointerX() - prevX;
-            long dt = cur.getT() - prevT;
-            if (dx < 0) {
-                minorBackward++;
-            }
-            if (dx == 0) {
-                zeroDxStreak++;
-                if (zeroDxStreak > MAX_ZERO_STREAK_ALLOWED) {
-                    longZeroDxStreak++;
+            float dt = cur.getT() - prev.getT();
+            float dx = cur.getPointerX() - prev.getPointerX();
+            float dy = cur.getPointerY() - prev.getPointerY();
+            // 累加 Y 轴抖动 (取绝对值)
+            sumYChange += Math.abs(dy);
+            // 速度计算 (px/ms -> px/s)
+            if (dt > 0) {
+                float speed = Math.abs(dx) / dt * 1000f;
+                // 极速校验：速率通常不会超过 5000px/s (鼠标甩动除外，但滑块场景较少)
+                // 适当放宽防止误判，但如果出现瞬间移动 (速度无穷大) 则为异常
+                if (speed > 20000) {
+                    log.warn("validateTrack 失败: 瞬移异常 speed={}", speed);
+                    return false;
                 }
-            } else {
-                zeroDxStreak = 0;
-            }
-            if (dx > 0) {
-                float instSpeed = dx / dt * 1000f;
-                sumSpeed += instSpeed;
-                sumSpeedSq += instSpeed * instSpeed;
-                speedSamples++;
-
-                if (dx <= MICRO_MOVE_MAX) {
-                    microMoveCount++;
+                // 只统计正向移动的速度
+                if (dx > 0) {
+                    maxSpeed = Math.max(maxSpeed, speed);
+                    sumSpeed += speed;
+                    speedSamples++;
+                    // 统计末端速度
+                    if (i > startCheckIndex) {
+                        lastStageSpeedSum += speed;
+                        lastStageCount++;
+                    }
                 }
-                if (prevSpeed >= 0 && Math.abs(instSpeed - prevSpeed) > SPEED_CHANGE_DELTA) {
-                    speedChangeCount++;
-                }
-                prevSpeed = instSpeed;
-            }
-            prevX = cur.getPointerX();
-            prevT = cur.getT();
-        }
-        if (speedSamples > 3) {
-            float avg = sumSpeed / speedSamples;
-            float var = (sumSpeedSq / speedSamples) - avg * avg;
-            if (var < 200) {
-                log.warn("validateTrack 失败: 速度方差过低(疑似匀速脚本) avg={}, var={}", avg, var);
-                return false;
             }
         }
-        // 无抖动校验：缺少微小自然抖动或速度变化极少
-        if (speedSamples >= 6) {
-            if (microMoveCount == 0) {
-                log.warn("validateTrack 失败: 缺少微抖动(疑似脚本)");
-                return false;
-            }
-            if (speedChangeCount < 2) {
-                log.warn("validateTrack 失败: 速度变化过少 speedChangeCount={}", speedChangeCount);
-                return false;
-            }
-        }
-        // 长时间完全静止可疑
-        if (longZeroDxStreak > 2) {
-            log.warn("validateTrack 失败: 长时间多段保持不动 longZeroDxStreak={}", longZeroDxStreak);
+        // --- 3. 核心逻辑判定 ---
+        // A. Y轴死直线校验 (最有效的简单脚本防御)
+        // 真实很难保持 Y 轴完全不动（sumYChange == 0）。
+        // 设置一个极低的阈值，比如 0，或者如果做了平滑处理设为 1。
+        if (sumYChange == 0) {
+            log.warn("validateTrack 失败: Y轴无抖动 (机器特征)");
             return false;
+        }
+        // B. 匀速校验 (平均速度 vs 最大速度)
+        if (speedSamples > 0) {
+            double avgSpeed = sumSpeed / speedSamples;
+            // 如果最大速度极其接近平均速度，说明是匀速运动 (var -> 0)
+            // 人类运动：Max 远大于 Avg (因为有起步和停止过程)
+            if (maxSpeed < avgSpeed * 1.1) {
+                log.warn("validateTrack 失败: 过于匀速 (机器特征) max={}, avg={}", maxSpeed, avgSpeed);
+                return false;
+            }
+        }
+        // C. 减速进坑 (Fitts Law)
+        // 绝大多数人在接近终点时会减速对齐。
+        // 如果最后 25% 路程的平均速度，依然等于或大于整体平均速度，甚至接近最大速度，可疑。
+        /* 注意：此规则有一定误判率（比如极快手速的人），
+           建议作为权重因子，或者设置较宽松的阈值 (e.g., 末端速度是整体均速的 2倍以上则报警)
+        */
+        if (lastStageCount > 0 && speedSamples > 0) {
+            double lastStageAvg = lastStageSpeedSum / lastStageCount;
+            double totalAvg = sumSpeed / speedSamples;
+            if (lastStageAvg > totalAvg * 2.5) {
+                log.warn("validateTrack 失败: 末端异常加速)");
+                return false;
+            }
         }
         return true;
     }
