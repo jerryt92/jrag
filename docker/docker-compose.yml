@@ -1,18 +1,19 @@
 services:
   init-config:
-    image: debian:bookworm-slim
+    image: init:${TAG:-latest}
     entrypoint: [ "/bin/bash", "-c" ]
+    pull_policy: build
+    build:
+      context: ..
+      dockerfile: docker/init/Dockerfile
     command:
       - |
         tr -d '\r' < /init/init-config.sh > /tmp/init-script.sh
         chmod +x /tmp/init-script.sh
         /bin/bash /tmp/init-script.sh
-
     environment:
       JRAG_BASE_DIR: /root/jrag
     volumes:
-      - ../jrag-starter/src/main/resources:/templates:ro
-      - ./init-config.sh:/init/init-config.sh:ro
       - ${JRAG_BASE_PATH}:/root/jrag
     restart: "no"
 
@@ -53,7 +54,7 @@ services:
     pull_policy: build
     build:
       context: ..
-      dockerfile: docker/Dockerfile
+      dockerfile: docker/jrag/Dockerfile
     depends_on:
       init-config:
         condition: service_completed_successfully
