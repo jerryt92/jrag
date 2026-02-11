@@ -9,7 +9,7 @@ COPY jrag-client/pom.xml /workspace/jrag-client/
 COPY jrag-model/pom.xml /workspace/jrag-model/
 COPY jrag-server/pom.xml /workspace/jrag-server/
 COPY jrag-starter/pom.xml /workspace/jrag-starter/
-COPY . /workspace
+COPY .. /workspace
 RUN --mount=type=cache,target=/root/.m2 mvn -s "${MAVEN_SETTINGS}" -pl jrag-starter -am -DskipTests package
 
 # 如果 BUILD_MVN_ON_DOCKER 为 true，则从 build-env 阶段获取文件
