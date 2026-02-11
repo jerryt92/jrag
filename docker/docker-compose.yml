@@ -13,6 +13,7 @@ services:
     volumes:
       - ../jrag-starter/src/main/resources:/templates:ro
       - ./init-config.sh:/init/init-config.sh:ro
+      - ${JRAG_BASE_PATH}:/root/jrag
     restart: "no"
 
   milvus:
