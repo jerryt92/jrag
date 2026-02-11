@@ -1,8 +1,5 @@
 .git
 .idea
 .vscode
-**/target
 **/node_modules
-**/dist
-!jrag-starter/src/main/resources/dist
 **/.DS_Store

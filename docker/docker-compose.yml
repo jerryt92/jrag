@@ -11,7 +11,6 @@ services:
     environment:
       JRAG_BASE_DIR: /root/jrag
     volumes:
-      - ${JRAG_BASE_PATH}:/jrag
       - ../jrag-starter/src/main/resources:/templates:ro
       - ./init-config.sh:/init/init-config.sh:ro
     restart: "no"
@@ -54,10 +53,6 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-      args:
-        UPDATE_UI: ${UPDATE_UI:-true}
-        JRAG_UI_REPO: ${JRAG_UI_REPO:-https://github.com/jerryt92/jrag-ui.git}
-        JRAG_UI_BRANCH: ${JRAG_UI_BRANCH:-dist}
     depends_on:
       init-config:
         condition: service_completed_successfully
