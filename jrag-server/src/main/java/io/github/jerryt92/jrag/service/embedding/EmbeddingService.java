@@ -3,9 +3,12 @@ package io.github.jerryt92.jrag.service.embedding;
 import io.github.jerryt92.jrag.config.EmbeddingProperties;
 import io.github.jerryt92.jrag.model.EmbeddingModel;
 import io.github.jerryt92.jrag.utils.HashUtil;
+import io.netty.channel.ChannelOption;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import io.netty.handler.timeout.ReadTimeoutHandler;
+import io.netty.handler.timeout.WriteTimeoutHandler;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
@@ -21,16 +24,26 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.netty.http.client.HttpClient;
+import reactor.netty.resources.ConnectionProvider;
 
 import javax.net.ssl.SSLException;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
 public class EmbeddingService {
+    private static final int CONNECT_TIMEOUT_MILLIS = 10_000;
+    private static final int READ_WRITE_TIMEOUT_SECONDS = 60;
+    private static final int RESPONSE_TIMEOUT_SECONDS = 60;
+    private static final int BLOCK_TIMEOUT_SECONDS = 65;
+    private static final int MAX_IDLE_SECONDS = 30;
+    private static final int MAX_LIFE_SECONDS = 300;
+
     // 用于标记数据的嵌入模型
     @Getter
     private String checkEmbeddingHash;
@@ -61,7 +74,17 @@ public class EmbeddingService {
             SslContext finalSslContext = sslContext;
 
             // 创建 HttpClient
-            HttpClient httpClient = HttpClient.create()
+            ConnectionProvider connectionProvider = ConnectionProvider.builder("embedding-http")
+                    .maxIdleTime(Duration.ofSeconds(MAX_IDLE_SECONDS))
+                    .maxLifeTime(Duration.ofSeconds(MAX_LIFE_SECONDS))
+                    .evictInBackground(Duration.ofSeconds(30))
+                    .build();
+            HttpClient httpClient = HttpClient.create(connectionProvider)
+                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, CONNECT_TIMEOUT_MILLIS)
+                    .responseTimeout(Duration.ofSeconds(RESPONSE_TIMEOUT_SECONDS))
+                    .doOnConnected(conn -> conn
+                            .addHandlerLast(new ReadTimeoutHandler(READ_WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS))
+                            .addHandlerLast(new WriteTimeoutHandler(READ_WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS)))
                     .secure(t -> t.sslContext(finalSslContext));
 
             // 根据配置构建 WebClient
@@ -135,7 +158,7 @@ public class EmbeddingService {
                     .retrieve()
                     .bodyToMono(new ParameterizedTypeReference<OpenAiApi.EmbeddingList<OpenAiApi.Embedding>>() {
                     })
-                    .block(); // 阻塞等待结果
+                    .block(Duration.ofSeconds(BLOCK_TIMEOUT_SECONDS)); // 阻塞等待结果
 
             if (openAIEmbeddingsResponse != null && openAIEmbeddingsResponse.data() != null) {
                 for (int i = 0; i < openAIEmbeddingsResponse.data().size(); i++) {
@@ -170,7 +193,7 @@ public class EmbeddingService {
                     .bodyValue(ollamaEmbeddingsRequest) // 自动序列化为 JSON
                     .retrieve()
                     .bodyToMono(OllamaApi.EmbeddingsResponse.class)
-                    .block(); // 阻塞等待结果
+                    .block(Duration.ofSeconds(BLOCK_TIMEOUT_SECONDS)); // 阻塞等待结果
 
             if (ollamaEmbeddingsResponse != null && ollamaEmbeddingsResponse.embeddings() != null) {
                 List<float[]> embeddings = ollamaEmbeddingsResponse.embeddings();
