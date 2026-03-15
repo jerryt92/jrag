@@ -147,6 +147,12 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
         </dependency>
+        <!-- https://github.com/modelcontextprotocol/java-sdk/issues/210 -->
+        <dependency>
+            <groupId>io.modelcontextprotocol.sdk</groupId>
+            <artifactId>mcp-core</artifactId>
+            <version>0.17.0</version>
+        </dependency>
     </dependencies>
     <profiles>
         <profile>
