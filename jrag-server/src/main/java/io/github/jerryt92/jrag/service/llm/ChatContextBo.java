@@ -14,6 +14,7 @@ import io.github.jerryt92.jrag.service.llm.tools.ToolInterface;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
 import reactor.core.Disposable;
 
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * LLM对话上下文实例
@@ -72,6 +74,8 @@ public class ChatContextBo {
 
     private ConcurrentHashMap<Future, Future> functionCallingFutures = new ConcurrentHashMap<>();
 
+    private final AtomicBoolean responsePersisted = new AtomicBoolean(false);
+
     public ChatContextBo(String contextId, String userId, LlmClient llmClient, FunctionCallingService functionCallingService, ChatContextStorageService chatContextStorageService, LlmProperties llmProperties) {
         if (!CollectionUtils.isEmpty(functionCallingService.getTools())) {
             this.tools = new ArrayList<>();
@@ -94,6 +98,7 @@ public class ChatContextBo {
             messages = chatRequest.getMessages();
             index = chatRequest.getMessages().size();
             lastRequestTime = System.currentTimeMillis();
+            responsePersisted.set(false);
             if (eventStreamDisposable != null && !eventStreamDisposable.isDisposed()) {
                 // 如果存在未完成的对话，则忽略
                 log.info("Event stream disposed");
@@ -111,6 +116,9 @@ public class ChatContextBo {
                             break;
                         case ASSISTANT:
                             message.setRole(ChatModel.Role.ASSISTANT);
+                            break;
+                        case TOOL:
+                            message.setRole(ChatModel.Role.TOOL);
                             break;
                     }
                     messagesContext.add(message);
@@ -130,6 +138,7 @@ public class ChatContextBo {
                 );
                 eventStreamDisposable = llmClient.chat(request, chatCallback);
                 chatChatCallback.onWebsocketClose = () -> {
+                    persistInterruptedResponse();
                     if (eventStreamDisposable != null && !eventStreamDisposable.isDisposed()) {
                         eventStreamDisposable.dispose();
                     }
@@ -182,6 +191,7 @@ public class ChatContextBo {
                                 ), toolCallResult.getId(), chatChatCallback);
                             }
                             chatChatCallback.onWebsocketClose = () -> {
+                                persistInterruptedResponse();
                                 stringFuture.cancel(true);
                                 if (eventStreamDisposable != null && !eventStreamDisposable.isDisposed()) {
                                     eventStreamDisposable.dispose();
@@ -218,17 +228,11 @@ public class ChatContextBo {
         // 流结束
         log.info("回答" + ": " + this.lastAssistantMassage.getContent());
         if (!isWaitingFunction) {
-            this.lastAssistantMassage.setRagInfos(this.lastRagInfos);
-            this.messages.add(this.lastAssistantMassage);
-            this.lastAssistantMassage = new ChatModel.Message()
-                    .setRole(ChatModel.Role.ASSISTANT)
-                    .setContent("");
-            this.lastRagInfos = null;
+            persistResponse(false);
             chatChatCallback.completeCall.run();
         }
         isWaitingFunction = false;
         functionCallingFutures.forEach((future, future1) -> future.cancel(true));
-        chatContextStorageService.storageChatContextToDb(this);
     }
 
     private void onError(Throwable t, ChatCallback<ChatResponseDto> chatChatCallback) {
@@ -240,5 +244,35 @@ public class ChatContextBo {
         isWaitingFunction = false;
         functionCallingFutures.forEach((future, future1) -> future.cancel(true));
         chatChatCallback.errorCall.accept(t);
+    }
+
+    private void persistInterruptedResponse() {
+        persistResponse(true);
+    }
+
+    private void persistResponse(boolean interrupted) {
+        if (!responsePersisted.compareAndSet(false, true)) {
+            return;
+        }
+        if (StringUtils.isNotBlank(this.lastAssistantMassage.getContent())) {
+            if (interrupted) {
+                this.lastAssistantMassage.setContent(appendEllipsis(this.lastAssistantMassage.getContent()));
+            }
+            this.lastAssistantMassage.setRagInfos(this.lastRagInfos);
+            this.messages.add(this.lastAssistantMassage);
+        }
+        this.lastAssistantMassage = new ChatModel.Message()
+                .setRole(ChatModel.Role.ASSISTANT)
+                .setContent("");
+        this.lastRagInfos = null;
+        chatContextStorageService.storageChatContextToDb(this);
+    }
+
+    // 对中断保存的回答补全省略号，并避免重复追加。
+    private String appendEllipsis(String content) {
+        if (StringUtils.endsWithAny(content, "...", "…", "......", "……")) {
+            return content;
+        }
+        return content + "...";
     }
 }
