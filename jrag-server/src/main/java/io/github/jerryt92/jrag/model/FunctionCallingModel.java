@@ -32,7 +32,7 @@ public class FunctionCallingModel {
     @Accessors(chain = true)
     public static class ToolResponse {
         String name;
-        List<String> responseData;
+        String responseData;
     }
 
     public static ChatModel.Message buildToolResponseMessage(Collection<ToolResponse> toolResponses, String toolCallId) {

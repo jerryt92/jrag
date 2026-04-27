@@ -12,9 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -38,12 +36,8 @@ public class WebsiteViewer extends ToolInterface {
 
 
     @Override
-    public List<String> apply(List<Map<String, Object>> requests) {
-        List<String> results = new ArrayList<>();
-        for (Map<String, Object> request : requests) {
-            results.add(viewWebsiteContent(request.getOrDefault("url", "").toString()));
-        }
-        return results;
+    public String apply(Map<String, Object> request) {
+        return viewWebsiteContent(request.getOrDefault("url", "").toString());
     }
 
     private String viewWebsiteContent(String url) {

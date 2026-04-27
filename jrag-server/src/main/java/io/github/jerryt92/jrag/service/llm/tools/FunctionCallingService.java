@@ -9,7 +9,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -41,15 +40,15 @@ public class FunctionCallingService {
             ChatModel.ToolCallResult result = new ChatModel.ToolCallResult();
             result.setId(toolCall.getFunction().getId());
             log.info("FunctionCalling: {}", toolCall.getFunction().getName());
-            log.info("FunctionCalling args: {}", toolCall.getFunction().getArguments());
+            log.info("FunctionCalling args: {}", toolCall.getFunction().getArgument());
             ToolInterface toolBean = tools.get(toolCall.getFunction().getName());
             if (toolBean == null) {
                 String format = String.format("Tool %s not found", toolCall.getFunction().getName());
                 log.error(format);
-                result.setResults(List.of(format));
+                result.setResult(format);
                 return result;
             }
-            result.setResults(toolBean.apply(toolCall.getFunction().getArguments()));
+            result.setResult(toolBean.apply(toolCall.getFunction().getArgument()));
             return result;
         });
         try {

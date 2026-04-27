@@ -1,13 +1,11 @@
 package io.github.jerryt92.jrag.service.llm.client;
 
-import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import io.github.jerryt92.jrag.config.LlmProperties;
 import io.github.jerryt92.jrag.model.ChatCallback;
 import io.github.jerryt92.jrag.model.ChatModel;
 import io.github.jerryt92.jrag.model.FunctionCallingModel;
 import io.github.jerryt92.jrag.utils.LlmBaseUtils;
-import io.github.jerryt92.jrag.utils.SmartJsonFixer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.ai.model.ModelOptionsUtils;
@@ -62,7 +60,7 @@ public class OpenAiClient extends LlmClient {
                         List<OpenAiApi.ChatCompletionMessage.ToolCall> toolCalls = new ArrayList<>();
                         for (ChatModel.ToolCall toolCall : chatMessage.getToolCalls()) {
                             ChatModel.ToolCallFunction fn = toolCall.getFunction();
-                            String argsJson = fn == null ? null : ModelOptionsUtils.toJsonString(fn.getArguments());
+                            String argsJson = fn == null ? null : ModelOptionsUtils.toJsonString(fn.getArgument());
                             OpenAiApi.ChatCompletionMessage.ChatCompletionFunction openAiFn =
                                     new OpenAiApi.ChatCompletionMessage.ChatCompletionFunction(fn == null ? null : fn.getName(), argsJson);
                             toolCalls.add(new OpenAiApi.ChatCompletionMessage.ToolCall(
@@ -237,41 +235,28 @@ public class OpenAiClient extends LlmClient {
     private void finalizeToolCall(ChatModel.ToolCallFunction toolCallFunction, ChatCallback<ChatModel.ChatResponse> chatCallback) {
         try {
             String rawArgs = toolCallFunction.getArgumentsStream() == null ? "" : toolCallFunction.getArgumentsStream().toString();
-            String finalArgumentsString = SmartJsonFixer.fix(rawArgs);
-            List<Map<String, Object>> argumentMaps = new ArrayList<>();
-            List<JSONObject> argumentJsons;
+            Map<String, Object> argumentMap;
             try {
                 // prefer array format (legacy behavior), fallback to single object
-                argumentJsons = JSONArray.parseArray(finalArgumentsString, JSONObject.class);
-                argumentMaps.addAll(argumentJsons);
+                argumentMap = JSONObject.parseObject(rawArgs);
             } catch (Exception ignore) {
+                log.warn("Standard JSON parse failed, attempting LLM self-healing. Error: {}", ignore.getMessage());
+                // 第二层尝试：LLM 自我修复 (Heavy Weapon)
                 try {
-                    JSONObject argumentJson = JSONObject.parseObject(finalArgumentsString);
-                    if (argumentJson != null) {
-                        argumentMaps.add(argumentJson);
-                    }
-                } catch (Exception e2) {
-                    log.warn("Standard JSON parse failed, attempting LLM self-healing. Error: {}", e2.getMessage());
-                    // 第二层尝试：LLM 自我修复 (Heavy Weapon)
-                    try {
-                        // 调用 LlmBaseUtils 进行修复
-                        String llmFixedJson = LlmBaseUtils.jsonSyntaxFix(rawArgs);
-                        log.info("LLM self-healing result: {}", llmFixedJson);
+                    // 调用 LlmBaseUtils 进行修复
+                    String llmFixedJson = LlmBaseUtils.jsonSyntaxFix(rawArgs);
+                    log.info("LLM self-healing result: {}", llmFixedJson);
 
-                        // 修复后再次解析
-                        List<String> strings = JSONArray.parseArray(llmFixedJson, String.class);
-                        for (String string : strings) {
-                            argumentMaps.add(JSONObject.parseObject(string));
-                        }
-                    } catch (Exception llmEx) {
-                        log.error("Critical: LLM self-healing also failed. Raw: {}", rawArgs, llmEx);
-                        // 彻底失败，回调错误
-                        chatCallback.errorCall.accept(llmEx);
-                        return; // 结束
-                    }
+                    // 修复后再次解析
+                    argumentMap = JSONObject.parseObject(rawArgs);
+                } catch (Exception llmEx) {
+                    log.error("Critical: LLM self-healing also failed. Raw: {}", rawArgs, llmEx);
+                    // 彻底失败，回调错误
+                    chatCallback.errorCall.accept(llmEx);
+                    return; // 结束
                 }
             }
-            toolCallFunction.setArguments(argumentMaps);
+            toolCallFunction.setArgument(argumentMap);
             ChatModel.ToolCall toolCall = new ChatModel.ToolCall().setFunction(toolCallFunction);
             ChatModel.ChatResponse chatResponse = new ChatModel.ChatResponse()
                     .setMessage(new ChatModel.Message()
