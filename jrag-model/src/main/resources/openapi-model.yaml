@@ -129,6 +129,16 @@ components:
       required:
         - sliderX
         - hash
+    ValidatePowCaptchaDto:
+      type: object
+      properties:
+        hash:
+          type: string
+        powNonce:
+          type: string
+      required:
+        - hash
+        - powNonce
     Track:
       type: object
       properties:
@@ -173,6 +183,20 @@ components:
           type: number
           format: float
           description: 滑块图片高度
+    PowCaptchaResp:
+      type: object
+      description: 纯 PoW 验证挑战
+      properties:
+        hash:
+          type: string
+          description: 验证码签名
+        powSalt:
+          type: string
+          description: PoW salt
+        powDifficulty:
+          type: integer
+          format: int32
+          description: PoW 难度（前导零个数）
     EmbeddingsRequestDto:
       type: object
       properties:

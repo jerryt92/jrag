@@ -1,11 +1,13 @@
 package io.github.jerryt92.jrag.service.security;
 
 import io.github.jerryt92.jrag.model.SlideCaptchaResp;
+import io.github.jerryt92.jrag.model.PowCaptchaResp;
 import io.github.jerryt92.jrag.model.Track;
 import io.github.jerryt92.jrag.utils.HashUtil;
 import io.github.jerryt92.jrag.utils.UUIDUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -26,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,9 +48,14 @@ public class CaptchaService {
 
     private static final String CAPTCHA_KEY_PREFIX = "security_captcha:";
 
+    @Value("${jrag.security.captcha.pow-difficulty}")
+    private int powDifficulty;
+
     private static class CaptchaCache {
         String code;
         Float puzzleX;
+        String powSalt;
+        Integer powDifficulty;
         long expireTime;
     }
 
@@ -144,6 +152,28 @@ public class CaptchaService {
     }
 
     /**
+     * 生成 PoW 验证挑战
+     */
+    public PowCaptchaResp genPowCaptcha() {
+        String hash = UUIDUtil.randomUUID();
+        String code = UUIDUtil.randomUUID();
+        String powSalt = UUIDUtil.randomUUID();
+
+        CaptchaCache captchaCache = new CaptchaCache();
+        captchaCache.code = code;
+        captchaCache.powSalt = powSalt;
+        captchaCache.powDifficulty = powDifficulty;
+        captchaCache.expireTime = System.currentTimeMillis() + CAPTCHA_EXPIRE_TIME * 1000;
+        captchaCacheMap.put(CAPTCHA_KEY_PREFIX + hash, captchaCache);
+
+        PowCaptchaResp powCaptchaResp = new PowCaptchaResp();
+        powCaptchaResp.setHash(hash);
+        powCaptchaResp.setPowSalt(powSalt);
+        powCaptchaResp.setPowDifficulty(powDifficulty);
+        return powCaptchaResp;
+    }
+
+    /**
      * 验证滑块验证码
      *
      * @param sliderX 用户拖动的最终X坐标 (前端传来的结果值)
@@ -196,6 +226,28 @@ public class CaptchaService {
             log.error("验证异常", t);
         }
         return null;
+    }
+
+    /**
+     * 纯 PoW 验证并获取验证码 code
+     */
+    public String verifyPowCaptchaGetCaptchaCode(String hash, String powNonce) {
+        if (hash == null || powNonce == null || powNonce.isEmpty()) {
+            return null;
+        }
+        CaptchaCache captchaCache = captchaCacheMap.get(CAPTCHA_KEY_PREFIX + hash);
+        if (captchaCache == null) {
+            return null;
+        }
+        if (System.currentTimeMillis() > captchaCache.expireTime) {
+            captchaCacheMap.remove(CAPTCHA_KEY_PREFIX + hash);
+            return null;
+        }
+        if (!validatePow(hash, captchaCache, powNonce)) {
+            captchaCacheMap.remove(CAPTCHA_KEY_PREFIX + hash);
+            return null;
+        }
+        return captchaCache.code;
     }
 
     /**
@@ -293,6 +345,31 @@ public class CaptchaService {
             }
         }
         return true;
+    }
+
+    private boolean validatePow(String hash, CaptchaCache captchaCache, String powNonce) {
+        if (powNonce.length() > 128 || captchaCache.powSalt == null || captchaCache.powDifficulty == null) {
+            return false;
+        }
+        try {
+            String payload = hash + ":" + captchaCache.powSalt + ":" + powNonce;
+            String digest = HashUtil.getMessageDigest(payload.getBytes(StandardCharsets.UTF_8), HashUtil.MdAlgorithm.SHA256);
+            return digest.startsWith(repeatZero(captchaCache.powDifficulty));
+        } catch (NoSuchAlgorithmException e) {
+            log.error("PoW digest 算法异常", e);
+            return false;
+        }
+    }
+
+    private String repeatZero(int n) {
+        if (n <= 0) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder(n);
+        for (int i = 0; i < n; i++) {
+            sb.append('0');
+        }
+        return sb.toString();
     }
 
     /**

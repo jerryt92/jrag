@@ -1,9 +1,11 @@
 package io.github.jerryt92.jrag.controller;
 
 import io.github.jerryt92.jrag.model.LoginRequestDto;
+import io.github.jerryt92.jrag.model.PowCaptchaResp;
 import io.github.jerryt92.jrag.model.SlideCaptchaResp;
 import io.github.jerryt92.jrag.model.Track;
 import io.github.jerryt92.jrag.model.ValidateCaptchaDto;
+import io.github.jerryt92.jrag.model.ValidatePowCaptchaDto;
 import io.github.jerryt92.jrag.model.VerifySlideCaptcha200Response;
 import io.github.jerryt92.jrag.model.security.SessionBo;
 import io.github.jerryt92.jrag.server.api.LoginApi;
@@ -63,6 +65,30 @@ public class LoginController implements LoginApi {
         Track[] trackArray = validateCaptchaDto.getTrack().toArray(new Track[0]);
         // 调用服务方法
         String code = captchaService.verifySlideCaptchaGetCaptchaCode(sliderX, hash, trackArray);
+        if (code != null) {
+            response.setResult(true);
+            response.setCode(code);
+        } else {
+            response.setResult(false);
+        }
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    public ResponseEntity<PowCaptchaResp> getPowCaptcha() {
+        return ResponseEntity.ok(captchaService.genPowCaptcha());
+    }
+
+    @Override
+    public ResponseEntity<VerifySlideCaptcha200Response> verifyPowCaptcha(ValidatePowCaptchaDto validatePowCaptchaDto) {
+        VerifySlideCaptcha200Response response = new VerifySlideCaptcha200Response();
+        if (validatePowCaptchaDto == null) {
+            response.setResult(false);
+            return ResponseEntity.ok(response);
+        }
+        String hash = validatePowCaptchaDto.getHash();
+        String powNonce = validatePowCaptchaDto.getPowNonce();
+        String code = captchaService.verifyPowCaptchaGetCaptchaCode(hash, powNonce);
         if (code != null) {
             response.setResult(true);
             response.setCode(code);

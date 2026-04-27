@@ -189,6 +189,42 @@ paths:
                   code:
                     type: string
                     description: 验证码
+  /v1/auth/jrag/captcha/pow:
+    get:
+      operationId: getPowCaptcha
+      tags: [ Login ]
+      summary: 纯 PoW 验证挑战
+      responses:
+        200:
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: './openapi-model.yaml#/components/schemas/PowCaptchaResp'
+  /v1/auth/jrag/captcha/pow/validate:
+    post:
+      operationId: verifyPowCaptcha
+      tags: [ Login ]
+      summary: 验证纯 PoW 并得到经典验证码的值
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './openapi-model.yaml#/components/schemas/ValidatePowCaptchaDto'
+      responses:
+        200:
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: boolean
+                    description: 验证结果
+                  code:
+                    type: string
+                    description: 验证码
   /v1/api/jrag/embed:
     post:
       tags:
