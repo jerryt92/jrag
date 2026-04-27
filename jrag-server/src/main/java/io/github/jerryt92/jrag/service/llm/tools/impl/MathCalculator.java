@@ -10,7 +10,6 @@ import org.springframework.expression.spel.support.SimpleEvaluationContext;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -49,14 +48,12 @@ public class MathCalculator extends ToolInterface {
     }
 
     @Override
-    public List<String> apply(List<Map<String, Object>> requests) {
-        List<String> results = new ArrayList<>();
-        for (Map<String, Object> request : requests) {
-            String expressionStr = (String) request.get("expression");
-            if (!StringUtils.hasText(expressionStr)) {
-                results.add("Error: 表达式不能为空");
-                continue;
-            }
+    public String apply(Map<String, Object> request) {
+        String result;
+        String expressionStr = (String) request.get("expression");
+        if (!StringUtils.hasText(expressionStr)) {
+            result = "Error: 表达式不能为空";
+        } else {
             try {
                 // 1. 基础符号替换
                 String safeExpression = expressionStr.replace("（", "(")
@@ -77,16 +74,16 @@ public class MathCalculator extends ToolInterface {
 
                 if (value != null) {
                     // 这里的 toString() 对于 Long 类型会自动处理
-                    results.add(value.toString());
+                    result = value.toString();
                 } else {
-                    results.add("Error: 计算结果为空");
+                    result = "Error: 计算结果为空";
                 }
                 log.info("MathCalculator executed: orig=[{}] safe=[{}] result=[{}]", expressionStr, safeExpression, value);
             } catch (Exception e) {
                 log.error("MathCalculator execution failed for expression: {}", expressionStr, e);
-                results.add("Error: 计算失败 - " + e.getMessage());
+                result = "Error: 计算失败 - " + e.getMessage();
             }
         }
-        return results;
+        return result;
     }
 }
