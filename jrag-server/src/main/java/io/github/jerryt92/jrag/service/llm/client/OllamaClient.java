@@ -6,9 +6,9 @@ import io.github.jerryt92.jrag.model.ChatModel;
 import io.github.jerryt92.jrag.model.FunctionCallingModel;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.ai.model.ModelOptionsUtils;
 import org.springframework.ai.ollama.api.OllamaApi;
 import org.springframework.ai.ollama.api.OllamaChatOptions;
-import org.springframework.ai.model.ModelOptionsUtils;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -66,9 +66,7 @@ public class OllamaClient extends LlmClient {
                         List<OllamaApi.Message.ToolCall> toolCalls = new ArrayList<>();
                         for (ChatModel.ToolCall toolCall : chatMessage.getToolCalls()) {
                             ChatModel.ToolCallFunction fn = toolCall.getFunction();
-                            Map<String, Object> args = (fn != null && !CollectionUtils.isEmpty(fn.getArguments()))
-                                    ? fn.getArguments().getFirst()
-                                    : Map.of();
+                            Map<String, Object> args = fn.getArgument();
                             toolCalls.add(new OllamaApi.Message.ToolCall(
                                     new OllamaApi.Message.ToolCallFunction(
                                             fn == null ? null : fn.getName(),
@@ -148,7 +146,7 @@ public class OllamaClient extends LlmClient {
                                         new ChatModel.ToolCallFunction()
                                                 .setName(ollamaToolCall.function().name())
                                                 .setIndex(ollamaToolCall.function().index())
-                                                .setArguments(List.of(ollamaToolCall.function().arguments()))
+                                                .setArgument(ollamaToolCall.function().arguments())
                                 );
                         toolCalls.add(toolCall);
                     }

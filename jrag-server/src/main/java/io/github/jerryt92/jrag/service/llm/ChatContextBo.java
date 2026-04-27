@@ -182,12 +182,12 @@ public class ChatContextBo {
                             isWaitingFunction = true;
                             ChatModel.ToolCallResult toolCallResult = stringFuture.get();
                             log.info("FunctionCalling: {}", toolCall.getFunction().getName());
-                            log.info("FunctionCalling result: {}", toolCallResult.getResults());
-                            if (toolCallResult.getResults() != null) {
+                            log.info("FunctionCalling result: {}", toolCallResult.getResult());
+                            if (toolCallResult.getResult() != null) {
                                 toolCallResponse(Collections.singletonList(
                                         new FunctionCallingModel.ToolResponse()
                                                 .setName(toolCall.getFunction().getName())
-                                                .setResponseData(toolCallResult.getResults())
+                                                .setResponseData(toolCallResult.getResult())
                                 ), toolCallResult.getId(), chatChatCallback);
                             }
                             chatChatCallback.onWebsocketClose = () -> {

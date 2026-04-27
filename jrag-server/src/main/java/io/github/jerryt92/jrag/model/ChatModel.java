@@ -163,7 +163,7 @@ public class ChatModel {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class ToolCallResult {
         String id;
-        List<String> results;
+        String result;
     }
 
     @Data
@@ -180,8 +180,8 @@ public class ChatModel {
         String description;
         @JsonProperty("name")
         String name;
-        @JsonProperty("arguments")
-        List<Map<String, Object>> arguments;
+        @JsonProperty("argument")
+        Map<String, Object> argument;
         @JsonProperty("argumentsStream")
         StringBuilder argumentsStream;
     }

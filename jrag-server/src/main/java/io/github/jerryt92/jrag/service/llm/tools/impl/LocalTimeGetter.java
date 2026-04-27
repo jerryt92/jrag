@@ -8,9 +8,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -26,10 +24,8 @@ public class LocalTimeGetter extends ToolInterface {
     }
 
     @Override
-    public List<String> apply(List<Map<String, Object>> requests) {
-        List<String> results = new ArrayList<>();
-        results.add(getCurrentLocalTime());
-        return results;
+    public String apply(Map<String, Object> request) {
+        return getCurrentLocalTime();
     }
 
     private String getCurrentLocalTime() {
