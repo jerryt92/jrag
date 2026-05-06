@@ -64,6 +64,8 @@ services:
       - "30110:30110"
     environment:
       JRAG_BASE_DIR: /root/jrag
+      SPRING_OPTIONS: "${SPRING_OPTIONS}"
+      JAVA_OPTS: "${JAVA_OPTS}"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:

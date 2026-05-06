@@ -31,4 +31,4 @@ COPY --from=final-source /tmp/jrag.tar.gz /tmp/jrag.tar.gz
 
 RUN mkdir -p /opt && tar -xzf /tmp/jrag.tar.gz -C /opt && rm /tmp/jrag.tar.gz
 EXPOSE 30110
-ENTRYPOINT ["sh", "-c", "exec java -cp \"/opt/jrag/classes:/opt/jrag/lib/*\" $JAVA_OPTS io.github.jerryt92.jrag.JragStarterMain"]
+ENTRYPOINT ["sh", "-c", "exec java -cp \"/opt/jrag/classes:/opt/jrag/lib/*\" $JAVA_OPTS io.github.jerryt92.jrag.JragStarterMain $SPRING_OPTIONS"]
