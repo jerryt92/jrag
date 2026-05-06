@@ -35,9 +35,9 @@ public class FunctionCallingModel {
         String responseData;
     }
 
-    public static ChatModel.Message buildToolResponseMessage(Collection<ToolResponse> toolResponses, String toolCallId) {
-        return new ChatModel.Message()
-                .setRole(ChatModel.Role.TOOL)
+    public static ChatModelDto.Message buildToolResponseMessage(Collection<ToolResponse> toolResponses, String toolCallId) {
+        return new ChatModelDto.Message()
+                .setRole(ChatModelDto.Role.TOOL)
                 .setToolCallId(toolCallId)
                 .setContent(ModelOptionsUtils.toJsonString(toolResponses));
     }

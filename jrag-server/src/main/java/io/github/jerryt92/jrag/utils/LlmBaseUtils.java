@@ -1,6 +1,6 @@
 package io.github.jerryt92.jrag.utils;
 
-import io.github.jerryt92.jrag.model.ChatModel;
+import io.github.jerryt92.jrag.model.ChatModelDto;
 import io.github.jerryt92.jrag.service.llm.client.LlmClient;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -28,12 +28,12 @@ public class LlmBaseUtils {
                 2. 严禁输出任何解释性文字。
                 3. 必须转义字符串内部的非结构性双引号。""";
         String userPrompt = "错误 JSON 数据：\n" + badJson;
-        ChatModel.ChatRequest request = new ChatModel.ChatRequest()
+        ChatModelDto.ChatRequest request = new ChatModelDto.ChatRequest()
                 .setMessages(List.of(
-                        new ChatModel.Message().setRole(ChatModel.Role.SYSTEM).setContent(systemPrompt),
-                        new ChatModel.Message().setRole(ChatModel.Role.USER).setContent(userPrompt)
+                        new ChatModelDto.Message().setRole(ChatModelDto.Role.SYSTEM).setContent(systemPrompt),
+                        new ChatModelDto.Message().setRole(ChatModelDto.Role.USER).setContent(userPrompt)
                 ));
-        ChatModel.ChatResponse chatResponse = llmClient.syncChat(request);
+        ChatModelDto.ChatResponse chatResponse = llmClient.syncChat(request);
         try {
             String fixedContent = chatResponse.getMessage().getContent();
             // 2. 二次清洗：防止 LLM 还是不听话返回了 Markdown

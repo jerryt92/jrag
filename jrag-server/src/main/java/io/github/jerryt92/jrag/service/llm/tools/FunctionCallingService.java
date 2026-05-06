@@ -1,6 +1,6 @@
 package io.github.jerryt92.jrag.service.llm.tools;
 
-import io.github.jerryt92.jrag.model.ChatModel;
+import io.github.jerryt92.jrag.model.ChatModelDto;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -34,10 +34,10 @@ public class FunctionCallingService {
         log.info("Loaded {} function calling tools", tools.size());
     }
 
-    public Future<ChatModel.ToolCallResult> functionCalling(ChatModel.ToolCall toolCall) {
+    public Future<ChatModelDto.ToolCallResult> functionCalling(ChatModelDto.ToolCall toolCall) {
         // 创建 FutureTask 来包装任务
-        FutureTask<ChatModel.ToolCallResult> futureTask = new FutureTask<>(() -> {
-            ChatModel.ToolCallResult result = new ChatModel.ToolCallResult();
+        FutureTask<ChatModelDto.ToolCallResult> futureTask = new FutureTask<>(() -> {
+            ChatModelDto.ToolCallResult result = new ChatModelDto.ToolCallResult();
             result.setId(toolCall.getFunction().getId());
             log.info("FunctionCalling: {}", toolCall.getFunction().getName());
             log.info("FunctionCalling args: {}", toolCall.getFunction().getArgument());

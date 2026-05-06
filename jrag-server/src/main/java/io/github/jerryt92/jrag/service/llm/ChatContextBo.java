@@ -2,7 +2,7 @@ package io.github.jerryt92.jrag.service.llm;
 
 import io.github.jerryt92.jrag.config.LlmProperties;
 import io.github.jerryt92.jrag.model.ChatCallback;
-import io.github.jerryt92.jrag.model.ChatModel;
+import io.github.jerryt92.jrag.model.ChatModelDto;
 import io.github.jerryt92.jrag.model.ChatRequestDto;
 import io.github.jerryt92.jrag.model.ChatResponseDto;
 import io.github.jerryt92.jrag.model.FunctionCallingModel;
@@ -38,7 +38,7 @@ public class ChatContextBo {
     private final String userId;
     @Getter
     @Setter
-    private List<ChatModel.Message> messages;
+    private List<ChatModelDto.Message> messages;
 
     private int index;
 
@@ -56,17 +56,17 @@ public class ChatContextBo {
 
     private LlmProperties llmProperties;
 
-    private ChatModel.ChatRequest lastRequest;
+    private ChatModelDto.ChatRequest lastRequest;
 
-    private ChatModel.Message lastAssistantMassage = new ChatModel.Message()
-            .setRole(ChatModel.Role.ASSISTANT)
+    private ChatModelDto.Message lastAssistantMassage = new ChatModelDto.Message()
+            .setRole(ChatModelDto.Role.ASSISTANT)
             .setContent("");
 
     @Setter
     private List<RagInfoDto> lastRagInfos;
 
-    private ChatModel.Message lastFunctionCallingMassage = new ChatModel.Message()
-            .setRole(ChatModel.Role.ASSISTANT)
+    private ChatModelDto.Message lastFunctionCallingMassage = new ChatModelDto.Message()
+            .setRole(ChatModelDto.Role.ASSISTANT)
             .setContent("");
 
     @Getter
@@ -94,7 +94,7 @@ public class ChatContextBo {
 
     public void chat(ChatRequestDto chatRequestDto, ChatCallback<ChatResponseDto> chatChatCallback) {
         try {
-            ChatModel.ChatRequest chatRequest = Translator.translateToChatRequest(chatRequestDto);
+            ChatModelDto.ChatRequest chatRequest = Translator.translateToChatRequest(chatRequestDto);
             messages = chatRequest.getMessages();
             index = chatRequest.getMessages().size();
             lastRequestTime = System.currentTimeMillis();
@@ -103,33 +103,33 @@ public class ChatContextBo {
                 // 如果存在未完成的对话，则忽略
                 log.info("Event stream disposed");
             } else {
-                List<ChatModel.Message> messagesContext = new ArrayList<>();
-                for (ChatModel.Message wsMessage : chatRequest.getMessages()) {
-                    ChatModel.Message message = new ChatModel.Message()
+                List<ChatModelDto.Message> messagesContext = new ArrayList<>();
+                for (ChatModelDto.Message wsMessage : chatRequest.getMessages()) {
+                    ChatModelDto.Message message = new ChatModelDto.Message()
                             .setContent(wsMessage.getContent());
                     switch (wsMessage.getRole()) {
                         case SYSTEM:
-                            message.setRole(ChatModel.Role.SYSTEM);
+                            message.setRole(ChatModelDto.Role.SYSTEM);
                             break;
                         case USER:
-                            message.setRole(ChatModel.Role.USER);
+                            message.setRole(ChatModelDto.Role.USER);
                             break;
                         case ASSISTANT:
-                            message.setRole(ChatModel.Role.ASSISTANT);
+                            message.setRole(ChatModelDto.Role.ASSISTANT);
                             break;
                         case TOOL:
-                            message.setRole(ChatModel.Role.TOOL);
+                            message.setRole(ChatModelDto.Role.TOOL);
                             break;
                     }
                     messagesContext.add(message);
                 }
-                ChatModel.ChatRequest request = new ChatModel.ChatRequest()
+                ChatModelDto.ChatRequest request = new ChatModelDto.ChatRequest()
                         .setMessages(messagesContext);
                 lastRequest = request;
                 if (llmProperties.useTools) {
                     request.setTools(tools);
                 }
-                ChatCallback<ChatModel.ChatResponse> chatCallback = new ChatCallback<>(
+                ChatCallback<ChatModelDto.ChatResponse> chatCallback = new ChatCallback<>(
                         chatChatCallback.subscriptionId,
                         chatResponse -> consumeResponse(chatResponse, chatChatCallback),
                         () -> onComplete(chatChatCallback),
@@ -155,7 +155,7 @@ public class ChatContextBo {
         lastRequest.getMessages().add(lastFunctionCallingMassage);
         lastRequest.getMessages().add(FunctionCallingModel.buildToolResponseMessage(toolResponses, toolCallId));
         try {
-            ChatCallback<ChatModel.ChatResponse> chatCallback = new ChatCallback<>(
+            ChatCallback<ChatModelDto.ChatResponse> chatCallback = new ChatCallback<>(
                     chatChatCallback.subscriptionId,
                     chatResponse -> consumeResponse(chatResponse, chatChatCallback),
                     () -> onComplete(chatChatCallback),
@@ -169,18 +169,18 @@ public class ChatContextBo {
         }
     }
 
-    private void consumeResponse(ChatModel.ChatResponse response, ChatCallback<ChatResponseDto> chatChatCallback) {
+    private void consumeResponse(ChatModelDto.ChatResponse response, ChatCallback<ChatResponseDto> chatChatCallback) {
         if (Objects.nonNull(response.getMessage())) {
             if (!CollectionUtils.isEmpty(response.getMessage().getToolCalls())) {
                 // 模型有function calling请求
                 lastFunctionCallingMassage = response.getMessage();
-                for (ChatModel.ToolCall toolCall : response.getMessage().getToolCalls()) {
+                for (ChatModelDto.ToolCall toolCall : response.getMessage().getToolCalls()) {
                     if (toolCall.getFunction() != null) {
                         try {
-                            Future<ChatModel.ToolCallResult> stringFuture = functionCallingService.functionCalling(toolCall);
+                            Future<ChatModelDto.ToolCallResult> stringFuture = functionCallingService.functionCalling(toolCall);
                             functionCallingFutures.put(stringFuture, stringFuture);
                             isWaitingFunction = true;
-                            ChatModel.ToolCallResult toolCallResult = stringFuture.get();
+                            ChatModelDto.ToolCallResult toolCallResult = stringFuture.get();
                             log.info("FunctionCalling: {}", toolCall.getFunction().getName());
                             log.info("FunctionCalling result: {}", toolCallResult.getResult());
                             if (toolCallResult.getResult() != null) {
@@ -205,9 +205,9 @@ public class ChatContextBo {
                 }
                 return;
             }
-            if (response.getMessage().getRole().equals(ChatModel.Role.SYSTEM)) {
+            if (response.getMessage().getRole().equals(ChatModelDto.Role.SYSTEM)) {
                 messages.add(response.getMessage());
-            } else if (response.getMessage().getRole().equals(ChatModel.Role.ASSISTANT)) {
+            } else if (response.getMessage().getRole().equals(ChatModelDto.Role.ASSISTANT)) {
                 lastAssistantMassage.setContent(lastAssistantMassage.getContent() + response.getMessage().getContent());
                 if (!CollectionUtils.isEmpty(response.getMessage().getRagInfos())) {
                     lastAssistantMassage.setRagInfos(response.getMessage().getRagInfos());
@@ -215,7 +215,7 @@ public class ChatContextBo {
             }
         }
         // 不发送系统Prompt给前端
-        if (!response.getMessage().getRole().equals(ChatModel.Role.SYSTEM)) {
+        if (!response.getMessage().getRole().equals(ChatModelDto.Role.SYSTEM)) {
             ChatResponseDto chatResponseDto = Translator.translateToChatResponseDto(response, index);
             chatChatCallback.responseCall.accept(chatResponseDto);
         }
@@ -261,8 +261,8 @@ public class ChatContextBo {
             this.lastAssistantMassage.setRagInfos(this.lastRagInfos);
             this.messages.add(this.lastAssistantMassage);
         }
-        this.lastAssistantMassage = new ChatModel.Message()
-                .setRole(ChatModel.Role.ASSISTANT)
+        this.lastAssistantMassage = new ChatModelDto.Message()
+                .setRole(ChatModelDto.Role.ASSISTANT)
                 .setContent("");
         this.lastRagInfos = null;
         chatContextStorageService.storageChatContextToDb(this);

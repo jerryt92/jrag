@@ -2,7 +2,7 @@ package io.github.jerryt92.jrag.service.llm;
 
 import io.github.jerryt92.jrag.config.LlmProperties;
 import io.github.jerryt92.jrag.model.ChatCallback;
-import io.github.jerryt92.jrag.model.ChatModel;
+import io.github.jerryt92.jrag.model.ChatModelDto;
 import io.github.jerryt92.jrag.model.ChatRequestDto;
 import io.github.jerryt92.jrag.model.ChatResponseDto;
 import io.github.jerryt92.jrag.model.FileDto;
@@ -72,9 +72,9 @@ public class ChatService {
                 systemPromptMessageDto.setRole(MessageDto.RoleEnum.SYSTEM);
                 systemPromptMessageDto.setContent(systemPrompt);
                 request.getMessages().add(request.getMessages().size() - 1, systemPromptMessageDto);
-                ChatModel.ChatRequest ragRequest = Translator.translateToChatRequest(request);
+                ChatModelDto.ChatRequest ragRequest = Translator.translateToChatRequest(request);
                 List<RagInfoDto> ragInfoDtos = null;
-                if (llmProperties.useRag && ragRequest.getRetrievalKb() && ChatModel.Role.USER.equals(ragRequest.getMessages().getLast().getRole())) {
+                if (llmProperties.useRag && ragRequest.getRetrievalKb() && ChatModelDto.Role.USER.equals(ragRequest.getMessages().getLast().getRole())) {
                     ragInfoDtos = retriever.retrieveQuery(ragRequest);
                 }
                 chatContextBo.setLastRagInfos(ragInfoDtos);

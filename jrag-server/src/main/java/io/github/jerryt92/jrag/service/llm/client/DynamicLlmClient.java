@@ -2,7 +2,7 @@ package io.github.jerryt92.jrag.service.llm.client;
 
 import io.github.jerryt92.jrag.config.LlmProperties;
 import io.github.jerryt92.jrag.model.ChatCallback;
-import io.github.jerryt92.jrag.model.ChatModel;
+import io.github.jerryt92.jrag.model.ChatModelDto;
 import io.github.jerryt92.jrag.utils.LlmBaseUtils;
 import reactor.core.Disposable;
 
@@ -23,7 +23,7 @@ public class DynamicLlmClient extends LlmClient {
     }
 
     @Override
-    public Disposable chat(ChatModel.ChatRequest chatRequest, ChatCallback<ChatModel.ChatResponse> chatCallback) {
+    public Disposable chat(ChatModelDto.ChatRequest chatRequest, ChatCallback<ChatModelDto.ChatResponse> chatCallback) {
         return delegate.get().chat(chatRequest, chatCallback);
     }
 

@@ -2,7 +2,7 @@ package io.github.jerryt92.jrag.service.llm.client;
 
 import io.github.jerryt92.jrag.config.LlmProperties;
 import io.github.jerryt92.jrag.model.ChatCallback;
-import io.github.jerryt92.jrag.model.ChatModel;
+import io.github.jerryt92.jrag.model.ChatModelDto;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -29,7 +29,7 @@ public abstract class LlmClient {
      * @param chatCallback
      * @return Disposable 将订阅关系返回，以便在需要时取消订阅
      */
-    public abstract Disposable chat(ChatModel.ChatRequest chatRequest, ChatCallback<ChatModel.ChatResponse> chatCallback);
+    public abstract Disposable chat(ChatModelDto.ChatRequest chatRequest, ChatCallback<ChatModelDto.ChatResponse> chatCallback);
 
     /**
      * 同步接口
@@ -37,20 +37,20 @@ public abstract class LlmClient {
      * @param chatRequest
      * @return ChatModel.ChatResponse
      */
-    public ChatModel.ChatResponse syncChat(ChatModel.ChatRequest chatRequest) {
+    public ChatModelDto.ChatResponse syncChat(ChatModelDto.ChatRequest chatRequest) {
         // 1. 创建 Future 用于阻塞等待最终结果
-        CompletableFuture<ChatModel.ChatResponse> resultFuture = new CompletableFuture<>();
+        CompletableFuture<ChatModelDto.ChatResponse> resultFuture = new CompletableFuture<>();
         // 2. 准备累加器，用于拼凑流式返回的内容
         StringBuilder fullContent = new StringBuilder();
-        List<ChatModel.ToolCall> finalToolCalls = new ArrayList<>();
+        List<ChatModelDto.ToolCall> finalToolCalls = new ArrayList<>();
         // 使用数组仅仅为了在 lambda 中能修改引用（或者使用 AtomicReference）
         String[] finishReason = new String[1];
         // 3. 生成本次会话的 ID
         String subscriptionId = UUID.randomUUID().toString();
-        ChatCallback<ChatModel.ChatResponse> callback = new ChatCallback<>(subscriptionId);
+        ChatCallback<ChatModelDto.ChatResponse> callback = new ChatCallback<>(subscriptionId);
         // 4. 定义流式响应的处理逻辑 (Accumulator 模式)
         callback.responseCall = chatResponse -> {
-            ChatModel.Message msg = chatResponse.getMessage();
+            ChatModelDto.Message msg = chatResponse.getMessage();
             if (msg != null) {
                 // 情况 A: 累积文本内容 (流式返回时是一段一段的)
                 if (StringUtils.isNotBlank(msg.getContent())) {
@@ -68,9 +68,9 @@ public abstract class LlmClient {
         };
         // 5. 定义完成时的逻辑：组装最终对象并解除阻塞
         callback.completeCall = () -> {
-            ChatModel.ChatResponse finalResponse = new ChatModel.ChatResponse();
-            ChatModel.Message message = new ChatModel.Message();
-            message.setRole(ChatModel.Role.ASSISTANT);
+            ChatModelDto.ChatResponse finalResponse = new ChatModelDto.ChatResponse();
+            ChatModelDto.Message message = new ChatModelDto.Message();
+            message.setRole(ChatModelDto.Role.ASSISTANT);
             // 设置累积后的完整文本
             message.setContent(fullContent.toString());
             // 设置收集到的工具调用

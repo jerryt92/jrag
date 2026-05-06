@@ -2,7 +2,7 @@ package io.github.jerryt92.jrag.service.llm.client;
 
 import io.github.jerryt92.jrag.config.LlmProperties;
 import io.github.jerryt92.jrag.model.ChatCallback;
-import io.github.jerryt92.jrag.model.ChatModel;
+import io.github.jerryt92.jrag.model.ChatModelDto;
 import io.github.jerryt92.jrag.model.FunctionCallingModel;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -51,9 +51,9 @@ public class OllamaClient extends LlmClient {
     private final Set<String> functionCallingSet = new HashSet<>();
 
     @Override
-    public Disposable chat(ChatModel.ChatRequest chatRequest, ChatCallback<ChatModel.ChatResponse> chatCallback) {
+    public Disposable chat(ChatModelDto.ChatRequest chatRequest, ChatCallback<ChatModelDto.ChatResponse> chatCallback) {
         List<OllamaApi.Message> messagesContext = new ArrayList<>();
-        for (ChatModel.Message chatMessage : chatRequest.getMessages()) {
+        for (ChatModelDto.Message chatMessage : chatRequest.getMessages()) {
             switch (chatMessage.getRole()) {
                 case SYSTEM:
                     messagesContext.add(new OllamaApi.Message(OllamaApi.Message.Role.SYSTEM, chatMessage.getContent(), null, null, null, null));
@@ -64,8 +64,8 @@ public class OllamaClient extends LlmClient {
                 case ASSISTANT:
                     if (!CollectionUtils.isEmpty(chatMessage.getToolCalls())) {
                         List<OllamaApi.Message.ToolCall> toolCalls = new ArrayList<>();
-                        for (ChatModel.ToolCall toolCall : chatMessage.getToolCalls()) {
-                            ChatModel.ToolCallFunction fn = toolCall.getFunction();
+                        for (ChatModelDto.ToolCall toolCall : chatMessage.getToolCalls()) {
+                            ChatModelDto.ToolCallFunction fn = toolCall.getFunction();
                             Map<String, Object> args = fn.getArgument();
                             toolCalls.add(new OllamaApi.Message.ToolCall(
                                     new OllamaApi.Message.ToolCallFunction(
@@ -130,8 +130,8 @@ public class OllamaClient extends LlmClient {
         );
     }
 
-    private void consumeResponse(OllamaApi.ChatResponse ollamaResponse, ChatCallback<ChatModel.ChatResponse> chatCallback) {
-        List<ChatModel.ToolCall> toolCalls = null;
+    private void consumeResponse(OllamaApi.ChatResponse ollamaResponse, ChatCallback<ChatModelDto.ChatResponse> chatCallback) {
+        List<ChatModelDto.ToolCall> toolCalls = null;
         if (ollamaResponse == null || (ollamaResponse.done() == null && ollamaResponse.model() == null)) {
             chatCallback.completeCall.run();
         } else {
@@ -141,9 +141,9 @@ public class OllamaClient extends LlmClient {
                 toolCalls = new ArrayList<>();
                 for (OllamaApi.Message.ToolCall ollamaToolCall : ollamaResponse.message().toolCalls()) {
                     if (ollamaToolCall.function() != null) {
-                        ChatModel.ToolCall toolCall = new ChatModel.ToolCall()
+                        ChatModelDto.ToolCall toolCall = new ChatModelDto.ToolCall()
                                 .setFunction(
-                                        new ChatModel.ToolCallFunction()
+                                        new ChatModelDto.ToolCallFunction()
                                                 .setName(ollamaToolCall.function().name())
                                                 .setIndex(ollamaToolCall.function().index())
                                                 .setArgument(ollamaToolCall.function().arguments())
@@ -155,10 +155,10 @@ public class OllamaClient extends LlmClient {
             if (Boolean.TRUE.equals(ollamaResponse.done()) && functionCallingSet.contains(chatCallback.subscriptionId)) {
                 return;
             }
-            ChatModel.ChatResponse chatResponse = new ChatModel.ChatResponse()
+            ChatModelDto.ChatResponse chatResponse = new ChatModelDto.ChatResponse()
                     .setMessage(
-                            new ChatModel.Message()
-                                    .setRole(ChatModel.Role.ASSISTANT)
+                            new ChatModelDto.Message()
+                                    .setRole(ChatModelDto.Role.ASSISTANT)
                                     .setContent(ollamaResponse.message() == null ? "" : ollamaResponse.message().content())
                                     .setToolCalls(toolCalls)
                     )

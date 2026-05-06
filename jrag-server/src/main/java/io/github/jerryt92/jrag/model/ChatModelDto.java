@@ -10,7 +10,7 @@ import lombok.experimental.Accessors;
 import java.util.List;
 import java.util.Map;
 
-public class ChatModel {
+public class ChatModelDto {
     @Data
     @Accessors(chain = true)
     @JsonInclude(JsonInclude.Include.NON_NULL)

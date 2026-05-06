@@ -4,7 +4,7 @@ import io.github.jerryt92.jrag.config.BackendTaskConfig;
 import io.github.jerryt92.jrag.config.LlmProperties;
 import io.github.jerryt92.jrag.mapper.mgb.ChatContextItemMapper;
 import io.github.jerryt92.jrag.mapper.mgb.ChatContextRecordMapper;
-import io.github.jerryt92.jrag.model.ChatModel;
+import io.github.jerryt92.jrag.model.ChatModelDto;
 import io.github.jerryt92.jrag.model.HistoryContextItem;
 import io.github.jerryt92.jrag.model.HistoryContextList;
 import io.github.jerryt92.jrag.model.MessageFeedbackRequest;
@@ -137,7 +137,7 @@ public class ChatContextService {
                 // 根据index升序排序
                 chatContextItemExample.setOrderByClause("message_index asc");
                 List<ChatContextItemWithBLOBs> chatContextItemList = chatContextItemMapper.selectByExampleWithBLOBs(chatContextItemExample);
-                List<ChatModel.Message> chatModelMessages = new ArrayList<>();
+                List<ChatModelDto.Message> chatModelMessages = new ArrayList<>();
                 for (ChatContextItemWithBLOBs chatContextItem : chatContextItemList) {
                     chatModelMessages.add(Translator.translateToChatMessage(chatContextItem));
                 }
@@ -225,10 +225,10 @@ public class ChatContextService {
                 chatContextItem.setMessageIndex(messageFeedbackRequest.getIndex());
                 chatContextItem.setFeedback(messageFeedbackRequest.getFeedback().getValue());
                 chatContextItemMapper.updateByPrimaryKeySelective(chatContextItem);
-                List<ChatModel.Message> messages = chatContextBo.getMessages();
+                List<ChatModelDto.Message> messages = chatContextBo.getMessages();
                 if (messageFeedbackRequest.getIndex() < messages.size()) {
-                    ChatModel.Message message = messages.get(messageFeedbackRequest.getIndex());
-                    message.setFeedback(ChatModel.Feedback.fromValue(messageFeedbackRequest.getFeedback().getValue()));
+                    ChatModelDto.Message message = messages.get(messageFeedbackRequest.getIndex());
+                    message.setFeedback(ChatModelDto.Feedback.fromValue(messageFeedbackRequest.getFeedback().getValue()));
                 }
             }
         }

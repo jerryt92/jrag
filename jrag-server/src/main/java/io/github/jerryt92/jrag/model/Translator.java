@@ -150,9 +150,9 @@ public final class Translator {
         return knowledgeRetrieveItemDto;
     }
 
-    public static ChatModel.ChatRequest translateToChatRequest(ChatRequestDto request) {
-        ChatModel.ChatRequest chatRequest = new ChatModel.ChatRequest();
-        List<ChatModel.Message> messages = new ArrayList<>();
+    public static ChatModelDto.ChatRequest translateToChatRequest(ChatRequestDto request) {
+        ChatModelDto.ChatRequest chatRequest = new ChatModelDto.ChatRequest();
+        List<ChatModelDto.Message> messages = new ArrayList<>();
         for (MessageDto messageDto : request.getMessages()) {
             messages.add(translateToChatMessage(messageDto));
         }
@@ -160,7 +160,7 @@ public final class Translator {
         return chatRequest;
     }
 
-    public static ChatRequestDto translateToChatRequestDto(ChatModel.ChatRequest request) {
+    public static ChatRequestDto translateToChatRequestDto(ChatModelDto.ChatRequest request) {
         ChatRequestDto chatRequestDto = new ChatRequestDto();
         chatRequestDto.setContextId(request.getContextId());
         List<MessageDto> messages = new ArrayList<>();
@@ -172,60 +172,60 @@ public final class Translator {
     }
 
 
-    public static ChatModel.Message translateToChatMessage(MessageDto messageDto) {
-        ChatModel.Message chatMessage = new ChatModel.Message();
+    public static ChatModelDto.Message translateToChatMessage(MessageDto messageDto) {
+        ChatModelDto.Message chatMessage = new ChatModelDto.Message();
         switch (messageDto.getRole()) {
             case SYSTEM:
-                chatMessage.setRole(ChatModel.Role.SYSTEM);
+                chatMessage.setRole(ChatModelDto.Role.SYSTEM);
                 break;
             case USER:
-                chatMessage.setRole(ChatModel.Role.USER);
+                chatMessage.setRole(ChatModelDto.Role.USER);
                 break;
             case ASSISTANT:
-                chatMessage.setRole(ChatModel.Role.ASSISTANT);
+                chatMessage.setRole(ChatModelDto.Role.ASSISTANT);
                 break;
             case TOOL:
-                chatMessage.setRole(ChatModel.Role.TOOL);
+                chatMessage.setRole(ChatModelDto.Role.TOOL);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid role: " + messageDto.getRole());
         }
         chatMessage.setContent(messageDto.getContent());
-        chatMessage.setFeedback(messageDto.getFeedback() == null ? ChatModel.Feedback.NONE : ChatModel.Feedback.fromValue(messageDto.getFeedback().getValue()));
+        chatMessage.setFeedback(messageDto.getFeedback() == null ? ChatModelDto.Feedback.NONE : ChatModelDto.Feedback.fromValue(messageDto.getFeedback().getValue()));
         chatMessage.setToolCalls(null);
         return chatMessage;
     }
 
-    public static ChatModel.Message translateToChatMessage(ChatContextItemWithBLOBs chatContextItemWithBLOBs) {
-        ChatModel.Message chatMessage = new ChatModel.Message();
+    public static ChatModelDto.Message translateToChatMessage(ChatContextItemWithBLOBs chatContextItemWithBLOBs) {
+        ChatModelDto.Message chatMessage = new ChatModelDto.Message();
         switch (chatContextItemWithBLOBs.getChatRole()) {
             case 0:
-                chatMessage.setRole(ChatModel.Role.SYSTEM);
+                chatMessage.setRole(ChatModelDto.Role.SYSTEM);
                 break;
             case 1:
-                chatMessage.setRole(ChatModel.Role.USER);
+                chatMessage.setRole(ChatModelDto.Role.USER);
                 break;
             case 2:
-                chatMessage.setRole(ChatModel.Role.ASSISTANT);
+                chatMessage.setRole(ChatModelDto.Role.ASSISTANT);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid role: " + chatContextItemWithBLOBs.getChatRole());
         }
         chatMessage.setContent(chatContextItemWithBLOBs.getContent());
-        chatMessage.setFeedback(chatContextItemWithBLOBs.getFeedback() == null ? ChatModel.Feedback.NONE : ChatModel.Feedback.fromValue(chatContextItemWithBLOBs.getFeedback()));
+        chatMessage.setFeedback(chatContextItemWithBLOBs.getFeedback() == null ? ChatModelDto.Feedback.NONE : ChatModelDto.Feedback.fromValue(chatContextItemWithBLOBs.getFeedback()));
         chatMessage.setToolCalls(null);
         chatMessage.setRagInfos(JSONArray.parseArray(chatContextItemWithBLOBs.getRagInfos(), RagInfoDto.class));
         return chatMessage;
     }
 
-    public static ChatResponseDto translateToChatResponseDto(ChatModel.ChatResponse response, int index) {
+    public static ChatResponseDto translateToChatResponseDto(ChatModelDto.ChatResponse response, int index) {
         ChatResponseDto chatResponseDto = new ChatResponseDto();
         chatResponseDto.setMessage(translateToChatMessageDto(response.getMessage(), index));
         chatResponseDto.setDone(response.getDone());
         return chatResponseDto;
     }
 
-    public static MessageDto translateToChatMessageDto(ChatModel.Message message, int index) {
+    public static MessageDto translateToChatMessageDto(ChatModelDto.Message message, int index) {
         if (message == null) {
             return null;
         }
@@ -316,8 +316,8 @@ public final class Translator {
     public static ChatContextRecord translateToChatContextRecord(ChatContextBo chatContextBo) {
         ChatContextRecord chatContextRecord = new ChatContextRecord();
         chatContextRecord.setContextId(chatContextBo.getContextId());
-        for (ChatModel.Message message : chatContextBo.getMessages()) {
-            if (message.getRole().equals(ChatModel.Role.USER)) {
+        for (ChatModelDto.Message message : chatContextBo.getMessages()) {
+            if (message.getRole().equals(ChatModelDto.Role.USER)) {
                 chatContextRecord.setTitle(message.getContent().length() > 64 ? message.getContent().substring(0, 64) : message.getContent());
                 break;
             }
@@ -331,7 +331,7 @@ public final class Translator {
         List<ChatContextItemWithBLOBs> chatContextItemWithBLOBs = new ArrayList<>();
         int msgIndex = 0;
         for (int i = 0; i < chatContextBo.getMessages().size(); i++) {
-            ChatModel.Message message = chatContextBo.getMessages().get(i);
+            ChatModelDto.Message message = chatContextBo.getMessages().get(i);
             ChatContextItemWithBLOBs chatContextItem = new ChatContextItemWithBLOBs();
             chatContextItem.setContextId(chatContextBo.getContextId());
             switch (message.getRole()) {

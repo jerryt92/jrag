@@ -3,7 +3,7 @@ package io.github.jerryt92.jrag.service.llm.client;
 import com.alibaba.fastjson2.JSONObject;
 import io.github.jerryt92.jrag.config.LlmProperties;
 import io.github.jerryt92.jrag.model.ChatCallback;
-import io.github.jerryt92.jrag.model.ChatModel;
+import io.github.jerryt92.jrag.model.ChatModelDto;
 import io.github.jerryt92.jrag.model.FunctionCallingModel;
 import io.github.jerryt92.jrag.utils.LlmBaseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -41,12 +41,12 @@ public class OpenAiClient extends LlmClient {
                 .build();
     }
 
-    private final Map<String, ChatModel.ToolCallFunction> functionCallingInfoMap = new HashMap<>();
+    private final Map<String, ChatModelDto.ToolCallFunction> functionCallingInfoMap = new HashMap<>();
 
     @Override
-    public Disposable chat(ChatModel.ChatRequest chatRequest, ChatCallback<ChatModel.ChatResponse> chatCallback) {
+    public Disposable chat(ChatModelDto.ChatRequest chatRequest, ChatCallback<ChatModelDto.ChatResponse> chatCallback) {
         List<OpenAiApi.ChatCompletionMessage> messagesContext = new ArrayList<>();
-        for (ChatModel.Message chatMessage : chatRequest.getMessages()) {
+        for (ChatModelDto.Message chatMessage : chatRequest.getMessages()) {
             switch (chatMessage.getRole()) {
                 case SYSTEM:
                     messagesContext.add(new OpenAiApi.ChatCompletionMessage(chatMessage.getContent(), OpenAiApi.ChatCompletionMessage.Role.SYSTEM));
@@ -58,8 +58,8 @@ public class OpenAiClient extends LlmClient {
                     // Assistant may include tool calls
                     if (!CollectionUtils.isEmpty(chatMessage.getToolCalls())) {
                         List<OpenAiApi.ChatCompletionMessage.ToolCall> toolCalls = new ArrayList<>();
-                        for (ChatModel.ToolCall toolCall : chatMessage.getToolCalls()) {
-                            ChatModel.ToolCallFunction fn = toolCall.getFunction();
+                        for (ChatModelDto.ToolCall toolCall : chatMessage.getToolCalls()) {
+                            ChatModelDto.ToolCallFunction fn = toolCall.getFunction();
                             String argsJson = fn == null ? null : ModelOptionsUtils.toJsonString(fn.getArgument());
                             OpenAiApi.ChatCompletionMessage.ChatCompletionFunction openAiFn =
                                     new OpenAiApi.ChatCompletionMessage.ChatCompletionFunction(fn == null ? null : fn.getName(), argsJson);
@@ -155,15 +155,15 @@ public class OpenAiClient extends LlmClient {
                     chatCallback.errorCall.accept(t);
                 })
                 .doOnComplete(() -> {
-                    ChatModel.ToolCallFunction toolCallFunction = functionCallingInfoMap.remove(chatCallback.subscriptionId);
+                    ChatModelDto.ToolCallFunction toolCallFunction = functionCallingInfoMap.remove(chatCallback.subscriptionId);
                     if (toolCallFunction != null) {
                         // function calling completed - emit tool call result message
                         finalizeToolCall(toolCallFunction, chatCallback);
                     } else {
                         // normal chat completed
-                        ChatModel.ChatResponse chatResponse = new ChatModel.ChatResponse()
-                                .setMessage(new ChatModel.Message()
-                                        .setRole(ChatModel.Role.ASSISTANT)
+                        ChatModelDto.ChatResponse chatResponse = new ChatModelDto.ChatResponse()
+                                .setMessage(new ChatModelDto.Message()
+                                        .setRole(ChatModelDto.Role.ASSISTANT)
                                         .setContent(""))
                                 .setDone(true);
                         chatCallback.responseCall.accept(chatResponse);
@@ -178,9 +178,9 @@ public class OpenAiClient extends LlmClient {
                 );
     }
 
-    private void consumeResponse(OpenAiApi.ChatCompletionChunk chunk, ChatCallback<ChatModel.ChatResponse> chatCallback) {
+    private void consumeResponse(OpenAiApi.ChatCompletionChunk chunk, ChatCallback<ChatModelDto.ChatResponse> chatCallback) {
         try {
-            ChatModel.ToolCallFunction toolCallFunction = functionCallingInfoMap.get(chatCallback.subscriptionId);
+            ChatModelDto.ToolCallFunction toolCallFunction = functionCallingInfoMap.get(chatCallback.subscriptionId);
             if (chunk == null || CollectionUtils.isEmpty(chunk.choices())) {
                 return;
             }
@@ -192,7 +192,7 @@ public class OpenAiClient extends LlmClient {
                 if (!CollectionUtils.isEmpty(delta.toolCalls())) {
                     // function calling chunks
                     if (toolCallFunction == null) {
-                        toolCallFunction = new ChatModel.ToolCallFunction();
+                        toolCallFunction = new ChatModelDto.ToolCallFunction();
                         toolCallFunction.setArgumentsStream(new StringBuilder());
                         functionCallingInfoMap.put(chatCallback.subscriptionId, toolCallFunction);
                     }
@@ -216,9 +216,9 @@ public class OpenAiClient extends LlmClient {
                     // normal content chunk
                     String contentDelta = delta.content();
                     if (contentDelta != null && !contentDelta.isEmpty()) {
-                        ChatModel.ChatResponse chatResponse = new ChatModel.ChatResponse()
-                                .setMessage(new ChatModel.Message()
-                                        .setRole(ChatModel.Role.ASSISTANT)
+                        ChatModelDto.ChatResponse chatResponse = new ChatModelDto.ChatResponse()
+                                .setMessage(new ChatModelDto.Message()
+                                        .setRole(ChatModelDto.Role.ASSISTANT)
                                         .setContent(contentDelta))
                                 .setDone(false)
                                 .setDoneReason(chunkChoice.finishReason() == null ? null : chunkChoice.finishReason().toString());
@@ -232,7 +232,7 @@ public class OpenAiClient extends LlmClient {
         }
     }
 
-    private void finalizeToolCall(ChatModel.ToolCallFunction toolCallFunction, ChatCallback<ChatModel.ChatResponse> chatCallback) {
+    private void finalizeToolCall(ChatModelDto.ToolCallFunction toolCallFunction, ChatCallback<ChatModelDto.ChatResponse> chatCallback) {
         try {
             String rawArgs = toolCallFunction.getArgumentsStream() == null ? "" : toolCallFunction.getArgumentsStream().toString();
             Map<String, Object> argumentMap;
@@ -257,10 +257,10 @@ public class OpenAiClient extends LlmClient {
                 }
             }
             toolCallFunction.setArgument(argumentMap);
-            ChatModel.ToolCall toolCall = new ChatModel.ToolCall().setFunction(toolCallFunction);
-            ChatModel.ChatResponse chatResponse = new ChatModel.ChatResponse()
-                    .setMessage(new ChatModel.Message()
-                            .setRole(ChatModel.Role.ASSISTANT)
+            ChatModelDto.ToolCall toolCall = new ChatModelDto.ToolCall().setFunction(toolCallFunction);
+            ChatModelDto.ChatResponse chatResponse = new ChatModelDto.ChatResponse()
+                    .setMessage(new ChatModelDto.Message()
+                            .setRole(ChatModelDto.Role.ASSISTANT)
                             .setContent("")
                             .setToolCalls(List.of(toolCall)))
                     .setDone(true);

@@ -4,7 +4,7 @@ import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import io.github.jerryt92.jrag.mapper.mgb.FilePoMapper;
 import io.github.jerryt92.jrag.mapper.mgb.TextChunkPoMapper;
-import io.github.jerryt92.jrag.model.ChatModel;
+import io.github.jerryt92.jrag.model.ChatModelDto;
 import io.github.jerryt92.jrag.model.EmbeddingModel;
 import io.github.jerryt92.jrag.model.KnowledgeRetrieveItemDto;
 import io.github.jerryt92.jrag.model.RagInfoDto;
@@ -54,13 +54,13 @@ public class Retriever {
      * @param chatRequest
      * @return
      */
-    public List<RagInfoDto> retrieveQuery(ChatModel.ChatRequest chatRequest) {
+    public List<RagInfoDto> retrieveQuery(ChatModelDto.ChatRequest chatRequest) {
         // 相似度匹配
         // 找到最后一个来自USER的内容
         String queryContent = null;
         for (int i = chatRequest.getMessages().size() - 1; i >= 0; i--) {
-            ChatModel.Message message = chatRequest.getMessages().get(i);
-            if (ChatModel.Role.USER.equals(message.getRole())) {
+            ChatModelDto.Message message = chatRequest.getMessages().get(i);
+            if (ChatModelDto.Role.USER.equals(message.getRole())) {
                 queryContent = message.getContent();
                 break;
             }
@@ -112,8 +112,8 @@ public class Retriever {
                 fileMap = filePoMapper.selectByExample(filePoExample)
                         .stream().collect(Collectors.toMap(FilePo::getId, filePo -> filePo, (v1, v2) -> v1));
             }
-            ChatModel.Message systemPromptMessage = new ChatModel.Message()
-                    .setRole(ChatModel.Role.SYSTEM)
+            ChatModelDto.Message systemPromptMessage = new ChatModelDto.Message()
+                    .setRole(ChatModelDto.Role.SYSTEM)
                     .setContent(
                             "The user's question is : \"" + queryContent + "\".\nThe contents (each part of \"content-x\" must be complete) :"
                                     + ragDataArray
