@@ -85,6 +85,12 @@ public class ChatController extends AbstractWebSocketHandler implements ChatApi 
         if (StringUtils.isNotBlank(contextId)) {
             session.getAttributes().put("contextId", contextId);
             session.getAttributes().put("callback", new ChatCallback<ChatResponseDto>(UUIDUtil.randomUUID()));
+            SessionBo sessionBo = loginService.getSession();
+            if (sessionBo != null) {
+                session.getAttributes().put("session", sessionBo);
+            } else {
+                closeSession(session);
+            }
         } else {
             closeSession(session);
         }
@@ -98,7 +104,7 @@ public class ChatController extends AbstractWebSocketHandler implements ChatApi 
         } catch (IOException e) {
             closeSession(wsSession);
         }
-        SessionBo session = loginService.getSession();
+        SessionBo sessionBo = (SessionBo) wsSession.getAttributes().get("session");
         ChatCallback<ChatResponseDto> innerChatChatCallback = getSseCallback(wsSession);
         innerChatChatCallback.responseCall = chatResponse -> {
             try {
@@ -133,7 +139,7 @@ public class ChatController extends AbstractWebSocketHandler implements ChatApi 
                 log.error("", e);
             }
         };
-        Thread.startVirtualThread(() -> chatService.handleChat(innerChatChatCallback, chatRequestDto, session == null ? null : session.getUserId()));
+        Thread.startVirtualThread(() -> chatService.handleChat(innerChatChatCallback, chatRequestDto, sessionBo == null ? null : sessionBo.getUserId()));
     }
 
     private void closeSession(WebSocketSession session) {

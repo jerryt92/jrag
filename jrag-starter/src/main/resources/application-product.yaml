@@ -19,7 +19,7 @@ jrag:
   security:
     captcha:
       expire-seconds: 300
-      pow-difficulty: 5
+      pow-difficulty: 4
     # 无用户模式
     no-user: false
   vector-database:
